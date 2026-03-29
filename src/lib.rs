@@ -1,4 +1,3 @@
-use sha2::{Digest, Sha256};
 
 // A macro that takes a file path string literal, hashes the embedded bytes
 /// using SHA-256, and returns a hex-encoded String.
