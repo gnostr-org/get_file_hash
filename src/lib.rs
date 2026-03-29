@@ -14,11 +14,9 @@
 ///
 /// ```rust
 /// use get_file_hash::get_file_hash;
-/// use std::fs;
+/// use sha2::{Digest, Sha256};
 ///
-/// // Assume 'my_file.txt' exists in the project root with content 'hello world'
-/// // In a real scenario, you'd create this file for testing.
-/// let hash = get_file_hash!("src/lib.rs");
+/// let hash = get_file_hash!("lib.rs");
 /// println!("Hash: {}", hash);
 /// ```
 #[macro_export]
@@ -38,7 +36,7 @@ macro_rules! get_file_hash {
 }
 
 /// Unit tests for the `get_file_hash!` macro.
-#[cfg(test)
+#[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};
 
