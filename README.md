@@ -52,7 +52,7 @@ cargo run --bin readme > README.md
 ## [`build.rs`](build.rs)
 
 *   **Target File:** `build.rs`
-*   **SHA-256 Hash:** 7ca4c5a85701c84c0ca8fb18546bbb7d02032558d6e2c1436ba0c7b302da2b4e
+*   **SHA-256 Hash:** fa3283ecbe208be1c442db3e73233a2542e8048e42062ebd75e555c73b33d124
 *   **Status:** Integrity Verified..
 
 ##
