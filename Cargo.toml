@@ -2,6 +2,11 @@
 name = "get_file_hash"
 version = "0.1.0"
 edition = "2024"
+description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
+license = "MIT"
+documentation = "https://github.com/gnostr-org/get_file_hash#readme"
+homepage = "https://github.com/gnostr-org/get_file_hash"
+repository = "https://github.com/gnostr-org/get_file_hash"
 
 [dependencies]
 get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.0" }
