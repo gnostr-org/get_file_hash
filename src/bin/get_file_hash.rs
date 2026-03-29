@@ -7,7 +7,7 @@ fn main() {
     println!("--- [Self-Audit Report] ---");
     println!("Target: main.rs");
     println!("SHA-256 Hash: {}", self_hash);
-    
+
     // Example of using the hash in logic
     if self_hash.starts_with("e3b0") {
         println!("Warning: This hash represents an empty file.");
