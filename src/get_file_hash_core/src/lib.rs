@@ -27,3 +27,24 @@ macro_rules! get_file_hash {
             .collect::<String>()
     }};
 }
+
+/// Computes the SHA-256 hash of the specified file at compile time and uses it as a Nostr private key.
+///
+/// This macro takes a string literal representing a file path, computes its SHA-256 hash,
+/// and returns a `nostr::Keys` object derived from this hash.
+///
+/// # Examples
+///
+/// ```rust
+/// use get_file_hash_core::file_hash_as_nostr_private_key;
+///
+/// let keys = file_hash_as_nostr_private_key!("lib.rs");
+/// println!("Public Key: {}", keys.public_key().to_bech32().unwrap());
+/// ```
+#[macro_export]
+macro_rules! file_hash_as_nostr_private_key {
+    ($file_path:expr) => {{
+        let hash_hex = $crate::get_file_hash!($file_path);
+        nostr::Keys::from_hex_secret_key(hash_hex).expect("Failed to create Nostr Keys from file hash")
+    }};
+}

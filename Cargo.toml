@@ -10,6 +10,7 @@ repository = "https://github.com/gnostr-org/get_file_hash"
 
 [dependencies]
 get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.0" }
+nostr = "0.44.2"
 sha2 = "0.11.0"
 
 [build-dependencies]
