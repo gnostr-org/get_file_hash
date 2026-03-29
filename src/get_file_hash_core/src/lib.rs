@@ -1,5 +1,3 @@
-use sha2::{Digest, Sha256};
-
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
 /// This macro takes a string literal representing a file path, reads the file's bytes

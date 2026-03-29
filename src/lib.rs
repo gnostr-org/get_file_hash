@@ -8,6 +8,7 @@
 pub use get_file_hash_core::get_file_hash;
 #[cfg(test)]
 mod tests {
+    use crate::get_file_hash;
     use sha2::{Digest, Sha256};
 
     /// Tests that the `get_file_hash!` macro correctly computes the SHA-256 hash

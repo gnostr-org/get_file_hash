@@ -4,6 +4,7 @@
 //! at compile time and incorporate it into runtime logic.
 
 use get_file_hash_core::get_file_hash;
+use sha2::{Digest, Sha256};
 
 /// The main entry point of the application.
 ///
