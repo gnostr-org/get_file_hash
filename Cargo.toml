@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sha2 = "0.11.0"
+get_file_hash_core = { path = "src/get_file_hash_core" }
+
+[build-dependencies]
+get_file_hash_core = { path = "src/get_file_hash_core" }

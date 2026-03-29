@@ -3,7 +3,7 @@
 //! This utility demonstrates how to use the `get_file_hash!` macro to obtain the hash of a specified file
 //! at compile time and incorporate it into runtime logic.
 
-use sha2::{Digest, Sha256};
+use get_file_hash_core::get_file_hash;
 
 /// The main entry point of the application.
 ///
@@ -13,7 +13,7 @@ use sha2::{Digest, Sha256};
 fn main() {
     // Calculate the SHA-256 hash of the current file (`get_file_hash.rs`) at compile time.
     // The `get_file_hash!` macro reads the file content and computes its hash.
-    let self_hash = get_file_hash::get_file_hash!("get_file_hash.rs");
+    let self_hash = get_file_hash!("get_file_hash.rs");
 
     // Generate Markdown formatted output for README.md.
     println!("# Get File Hash Utility\n");

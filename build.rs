@@ -1,5 +1,4 @@
 fn main() {
-    // This build script does nothing specific for now, but it will be executed before compilation.
-    // You can add logic here to, for example, generate code, link libraries, or set environment variables.
-    println!("cargo:warning=Running build.rs script...");
+    let cargo_toml_hash = get_file_hash_core::get_file_hash!("Cargo.toml");
+    println!("cargo:warning=Hash of Cargo.toml: {}", cargo_toml_hash);
 }
