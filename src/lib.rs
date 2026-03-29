@@ -17,17 +17,22 @@ macro_rules! get_file_hash {
     }};
 }
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use sha2::{Digest, Sha256};
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn test_get_file_hash() {
+        let file_content = include_bytes!("lib.rs");
+
+        let mut hasher = Sha256::new();
+        hasher.update(file_content);
+        let expected_hash = hasher.finalize()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+
+        let actual_hash = get_file_hash!("lib.rs");
+        assert_eq!(actual_hash, expected_hash);
     }
 }
