@@ -3,6 +3,8 @@ use nostr_sdk::prelude::*;
 use std::fs;
 use sha2::{Digest, Sha256};
 use hex;
+use std::path::PathBuf;
+use std::io::Write;
 
 async fn publish_nostr_event_if_release(
     keys: Keys,
@@ -21,10 +23,26 @@ async fn publish_nostr_event_if_release(
     client.connect().await;
     println!("cargo:warning=Connected to relay {}", relay_url);
 
-    if let Err(e) = client.send_event(event).await {
-        println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
-    } else {
-        println!("cargo:warning=Published Nostr event for {}", file_path_str);
+    let output_dir = PathBuf::from(".gnostr/build");
+    if let Err(e) = fs::create_dir_all(&output_dir) {
+        println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
+        return;
+    }
+
+    match client.send_event(event.clone()).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id);
+            let filename = format!(".{}.json", event_id);
+            let file_path = output_dir.join(&filename);
+            if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
+                println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+            } else {
+                println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
+            }
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
+        },
     }
 }
 
