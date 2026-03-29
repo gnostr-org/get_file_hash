@@ -32,7 +32,7 @@ async fn publish_nostr_event_if_release(
     match client.send_event(event.clone()).await {
         Ok(event_id) => {
             println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id);
-            let filename = format!(".{}.json", event_id);
+            let filename = format!("{}.json", event_id);
             let file_path = output_dir.join(&filename);
             if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
                 println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
