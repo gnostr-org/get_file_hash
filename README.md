@@ -19,18 +19,6 @@ To use the `get_file_hash!` macro, ensure you have `get_file_hash` (or `get_file
 
 ### Example
 
-```rust
-use get_file_hash::get_file_hash;
-// Or, if directly using the core crate:
-// use get_file_hash_core::get_file_hash;
-use sha2::{Digest, Sha256};
-
-fn main() {
-    let file_hash = get_file_hash!("src/my_module.rs");
-    println!("The SHA-256 hash of src/my_module.rs is: {}", file_hash);
-}
-```
-
 ## Setup and Building
 
 1.  **Clone the repository:**
@@ -58,8 +46,9 @@ To update it, execute:
 cargo run --bin get_file_hash > README.md
 ```
 
-## Current `src/bin/get_file_hash.rs` Information
+## Current File Hash Information (of `src/bin/get_file_hash.rs`)
 
 *   **Target File:** `src/bin/get_file_hash.rs`
-*   **SHA-256 Hash:** `3872374a2e666dec4817133a1a1ab31d888f31c1f8a6af78e3a0de1dddf515d3`
-*   **Status:** Integrity Verified.
+*   **SHA-256 Hash:** `5ac61951e0806edaf0d619d3e04b50a891b70043dd2308d31c888094e42eeb65`
+*   **Status:** Integrity Verified..
+
