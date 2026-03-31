@@ -1,13 +1,18 @@
 /// deterministic nostr event build example
 // deterministic nostr event build example
-use get_file_hash_core::{get_file_hash, get_git_tracked_files};
+use get_file_hash_core::get_file_hash;
+#[cfg(feature = "nostr")]
+use get_file_hash_core::get_git_tracked_files;
 #[cfg(feature = "nostr")]
 use nostr_sdk::prelude::*;
+#[cfg(feature = "nostr")]
 use std::fs;
 use sha2::{Digest, Sha256};
 #[cfg(feature = "nostr")]
 use ::hex;
+#[cfg(feature = "nostr")]
 use std::path::PathBuf;
+#[cfg(feature = "nostr")]
 use std::io::Write;
 
 #[cfg(feature = "nostr")]
