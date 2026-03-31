@@ -111,7 +111,12 @@ async fn main() {
                         Ok(secret_key) => {
                             let keys = Keys::new(secret_key);
                             let content = String::from_utf8_lossy(&bytes).into_owned();
-                            let event = EventBuilder::text_note(content, vec![]).to_event(&keys).unwrap();
+                            let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
+                            let tags = vec![
+                                Tag::parse(["file", file_path_str].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                                Tag::parse(["version", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                            ];
+                            let event = EventBuilder::text_note(content, tags).to_event(&keys).unwrap();
 
                             publish_nostr_event_if_release(file_hash_hex, keys, event, relay_url[1], file_path_str).await;
                         }
