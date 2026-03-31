@@ -27,7 +27,8 @@ async fn publish_nostr_event_if_release(
     client.connect().await;
     println!("cargo:warning=Connected to relay {}", relay_url);
 
-    let output_dir = PathBuf::from(".gnostr/build");
+    let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
+    let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
     if let Err(e) = fs::create_dir_all(&output_dir) {
         println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
         return;
