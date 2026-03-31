@@ -1,21 +1,21 @@
 /// deterministic nostr event build example
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::get_git_tracked_files;
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::prelude::*;
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
 use sha2::{Digest, Sha256};
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use ::hex;
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::path::PathBuf;
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::io::Write;
 
-#[cfg(feature = "nostr")]
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
 	hash: String,
     keys: Keys,
@@ -23,8 +23,8 @@ async fn publish_nostr_event_if_release(
     relay_url: &str,
     file_path_str: &str,
 ) -> Option<EventId> {
-    let client = nostr_sdk::Client::new(&keys);
-	let public_key = keys.public_key().to_string();
+    let client = nostr_sdk::Client::new(keys.clone());
+    let public_key = keys.public_key().to_string();
 
     if let Err(e) = client.add_relay(relay_url).await {
         println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
@@ -42,10 +42,10 @@ async fn publish_nostr_event_if_release(
         return None;
     }
 
-    match client.send_event(event.clone()).await {
+    match client.send_event(&event.clone()).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id);
-            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_id);
+            println!("cargo:warning=Published Nostr event for {}: {:?}", file_path_str, event_id);
+            let filename = format!("{}/{}/{:?}.json", hash, public_key.clone(), event_id);
             let file_path = output_dir.join(&filename);
             if let Some(parent) = file_path.parent() {
                 if let Err(e) = fs::create_dir_all(parent) {
@@ -58,7 +58,7 @@ async fn publish_nostr_event_if_release(
             } else {
                 println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
             }
-            Some(event_id)
+            Some(*event_id)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
