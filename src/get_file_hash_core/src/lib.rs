@@ -1,6 +1,8 @@
 use std::process::Command;
 use std::path::PathBuf;
+#[cfg(feature = "nostr")]
 use nostr_sdk::prelude::*;
+#[cfg(feature = "nostr")]
 use serde_json::json;
 
 /// Computes the SHA-256 hash of the specified file at compile time.
@@ -47,6 +49,7 @@ macro_rules! get_file_hash {
 /// let keys = file_hash_as_nostr_private_key!("lib.rs");
 /// println!("Public Key: {}", keys.public_key().to_bech32().unwrap());
 /// ```
+#[cfg(feature = "nostr")]
 #[macro_export]
 macro_rules! file_hash_as_nostr_private_key {
     ($file_path:expr) => {{
@@ -69,6 +72,7 @@ pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     .collect()
 }
 
+#[cfg(feature = "nostr")]
 pub async fn publish_metadata_event(
     keys: &Keys,
     relay_url: &str,

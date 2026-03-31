@@ -1,13 +1,16 @@
 /// deterministic nostr event build example
 // deterministic nostr event build example
 use get_file_hash_core::{get_file_hash, get_git_tracked_files};
+#[cfg(feature = "nostr")]
 use nostr_sdk::prelude::*;
 use std::fs;
 use sha2::{Digest, Sha256};
-use hex;
+#[cfg(feature = "nostr")]
+use ::hex;
 use std::path::PathBuf;
 use std::io::Write;
 
+#[cfg(feature = "nostr")]
 async fn publish_nostr_event_if_release(
 	hash: String,
     keys: Keys,
@@ -89,6 +92,7 @@ async fn main() {
     println!("cargo:rerun-if-changed=src/get_file_hash_core/src/lib.rs");
     println!("cargo:rerun-if-changed=build.rs");
 
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
     if cfg!(not(debug_assertions)) {
         // This code only runs in release builds
         let relay_url = ["wss://relay.damus.io", "wss://nos.lol"];
