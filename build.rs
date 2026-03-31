@@ -1,12 +1,13 @@
 /// deterministic nostr event build example
 // deterministic nostr event build example
-use get_file_hash_core::{get_file_hash, get_files_recursive};
+use get_file_hash_core::get_file_hash;
 use nostr_sdk::prelude::*;
 use std::fs;
 use sha2::{Digest, Sha256};
 use hex;
 use std::path::PathBuf;
 use std::io::Write;
+use std::process::Command;
 
 async fn publish_nostr_event_if_release(
 	hash: String,
@@ -94,7 +95,18 @@ async fn main() {
         let relay_url = ["wss://relay.damus.io", "wss://nos.lol"];
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
 
-        let files_to_publish: Vec<String> = get_files_recursive!(".");
+        let files_to_publish: Vec<String> = String::from_utf8_lossy(
+            &Command::new("git")
+                .arg("ls-files")
+                .current_dir(&manifest_dir)
+                .output()
+                .expect("Failed to execute git ls-files")
+                .stdout
+        )
+        .lines()
+        .filter_map(|line| Some(String::from(line)))
+        .collect();
+        
         let mut published_event_ids: Vec<Tag> = Vec::new();
 
         for file_path_str in &files_to_publish {
