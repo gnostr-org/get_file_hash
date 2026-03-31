@@ -4,7 +4,9 @@ use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::get_git_tracked_files;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
+use nostr_sdk::{Client, EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
+use get_file_hash_core::get_relay_urls;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
 use sha2::{Digest, Sha256};
@@ -17,23 +19,24 @@ use std::io::Write;
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
-    hash: String,
+	hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    relay_url: &str,
+    relay_urls: &[String],
     file_path_str: &str,
 ) -> Option<EventId> {
-    let client = nostr_sdk::Client::new(keys.clone());
-    let public_key = keys.public_key().to_string();
+    let mut client = nostr_sdk::Client::new(keys.clone());
+	let public_key = keys.public_key().to_string();
 
-    if let Err(e) = client.add_relay(relay_url).await {
-        println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
-        return None;
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
+        }
     }
-    println!("cargo:warning=Added relay {}", relay_url);
+    println!("cargo:warning=Added {} relays", relay_urls.len());
 
     client.connect().await;
-    println!("cargo:warning=Connected to relay {}", relay_url);
+    println!("cargo:warning=Connected to {} relays", relay_urls.len());
 
     let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
     let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
@@ -75,6 +78,9 @@ async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
+    #[cfg(all(not(debug_assertions), feature = "nostr"))]
+    let relay_urls = get_file_hash_core::get_relay_urls();
+
     if !is_git_repo {
         println!("cargo:rustc-cfg=is_published_source");
     } else {
@@ -101,7 +107,6 @@ async fn main() {
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
     if cfg!(not(debug_assertions)) {
         // This code only runs in release builds
-        let relay_url = ["wss://relay.damus.io", "wss://nos.lol"];
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
 
         let files_to_publish: Vec<String> = get_git_tracked_files(&PathBuf::from(&manifest_dir));
@@ -127,14 +132,14 @@ async fn main() {
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_url[1], file_path_str).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, &relay_urls, file_path_str).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
                             // Publish metadata event
                             get_file_hash_core::publish_metadata_event(
                                 &keys,
-                                relay_url[1],
+                                &relay_urls,
                                 "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
                                 "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
                                 file_path_str,
@@ -167,7 +172,7 @@ async fn main() {
                 hex::encode(Sha256::digest(content.as_bytes())),
                 keys,
                 event_builder,
-                relay_url[1],
+                &relay_urls,
                 "build_manifest.json",
             ).await;
         }

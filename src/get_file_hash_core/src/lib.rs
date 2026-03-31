@@ -4,10 +4,48 @@ use std::path::PathBuf;
 use nostr_sdk::prelude::*;
 #[cfg(feature = "nostr")]
 use serde_json::json;
+#[cfg(feature = "nostr")]
+use csv::ReaderBuilder;
+#[cfg(feature = "nostr")]
+use ::url::Url;
 
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
 
+#[cfg(feature = "nostr")]
+pub fn get_relay_urls() -> Vec<String> {
+    let content = String::from_utf8_lossy(ONLINE_RELAYS_GPS_CSV);
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(content.as_bytes());
+
+    rdr.records()
+        .filter_map(|result| {
+            match result {
+                Ok(record) => {
+                    record.get(0).and_then(|url_str| {
+                        let full_url_str = if url_str.contains("://") {
+                            url_str.to_string()
+                        } else {
+                            format!("wss://{}", url_str)
+                        };
+                        match Url::parse(&full_url_str) {
+                            Ok(url) if url.scheme() == "wss" => Some(url.to_string()),
+                            _ => {
+                                eprintln!("Warning: Invalid or unsupported relay URL scheme: {}", full_url_str);
+                                None
+                            }
+                        }
+                    })
+                },
+                Err(e) => {
+                    eprintln!("Error reading CSV record: {}", e);
+                    None
+                }
+            }
+        })
+        .collect()
+}
 
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
@@ -81,16 +119,17 @@ pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
 #[cfg(feature = "nostr")]
 pub async fn publish_metadata_event(
     keys: &Keys,
-    relay_url: &str,
+    relay_urls: &[String],
     picture_url: &str,
     banner_url: &str,
     file_path_str: &str,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
-    if let Err(e) = client.add_relay(relay_url).await {
-        println!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
-        return;
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
+        }
     }
     client.connect().await;
 
@@ -226,7 +265,6 @@ mod tests {
         use nostr_sdk::Keys;
 
         let keys = Keys::generate();
-        let relay_url = "wss://relay.example.com";
         let picture_url = "https://example.com/picture.jpg";
         let banner_url = "https://example.com/banner.jpg";
         let file_path_str = "test_file.txt";
@@ -234,9 +272,10 @@ mod tests {
         // This test primarily checks that the function doesn't panic
         // and goes through its execution path.
         // Actual publishing success depends on external network conditions.
+        let relay_urls = super::get_relay_urls();
         publish_metadata_event(
             &keys,
-            relay_url,
+            &relay_urls,
             picture_url,
             banner_url,
             file_path_str,
