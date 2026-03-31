@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use nostr_sdk::prelude::*;
 #[cfg(feature = "nostr")]
 use serde_json::json;
+#[cfg(feature = "nostr")]
+use nostr::Keys;
 
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
@@ -54,7 +56,7 @@ macro_rules! get_file_hash {
 macro_rules! file_hash_as_nostr_private_key {
     ($file_path:expr) => {{
         let hash_hex = $crate::get_file_hash!($file_path);
-        nostr::Keys::from_hex_secret_key(hash_hex).expect("Failed to create Nostr Keys from file hash")
+        nostr::Keys::parse(&hash_hex).expect("Failed to create Nostr Keys from file hash")
     }};
 }
 
@@ -195,5 +197,24 @@ mod tests {
         assert_eq!(tracked_files.len(), 2);
         assert!(tracked_files.contains(&"file1.txt".to_string()));
         assert!(tracked_files.contains(&"file2.txt".to_string()));
+    }
+
+    #[cfg(feature = "nostr")]
+    #[test]
+    fn test_file_hash_as_nostr_private_key() {
+        use super::file_hash_as_nostr_private_key;
+        use std::fs::File;
+        use std::io::Write;
+        use tempfile::tempdir;
+        use nostr_sdk::prelude::ToBech32;
+
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test_nostr_file.txt");
+        let content = "Nostr test content!";
+        File::create(&file_path).unwrap().write_all(content.as_bytes()).unwrap();
+
+        let keys = file_hash_as_nostr_private_key!(&file_path.to_str().unwrap());
+
+        assert!(!keys.public_key().to_bech32().unwrap().is_empty());
     }
 }
