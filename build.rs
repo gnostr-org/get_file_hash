@@ -4,7 +4,7 @@ use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::get_git_tracked_files;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::prelude::*;
+use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
 use sha2::{Digest, Sha256};
@@ -17,9 +17,9 @@ use std::io::Write;
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
-	hash: String,
+    hash: String,
     keys: Keys,
-    event: Event,
+    event_builder: EventBuilder,
     relay_url: &str,
     file_path_str: &str,
 ) -> Option<EventId> {
@@ -42,10 +42,11 @@ async fn publish_nostr_event_if_release(
         return None;
     }
 
-    match client.send_event(&event.clone()).await {
-        Ok(event_id) => {
-            println!("cargo:warning=Published Nostr event for {}: {:?}", file_path_str, event_id);
-            let filename = format!("{}/{}/{:?}.json", hash, public_key.clone(), event_id);
+    let event = client.sign_event_builder(event_builder).await.unwrap();
+
+    match client.send_event(&event).await {        Ok(event_id) => {
+            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id.val);
+            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_id.val.to_string());
             let file_path = output_dir.join(&filename);
             if let Some(parent) = file_path.parent() {
                 if let Err(e) = fs::create_dir_all(parent) {
@@ -58,7 +59,7 @@ async fn publish_nostr_event_if_release(
             } else {
                 println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
             }
-            Some(*event_id)
+            Some(event_id.val)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
@@ -124,9 +125,9 @@ async fn main() {
                                 Tag::parse(["file", file_path_str].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
                                 Tag::parse(["version", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
                             ];
-                            let event = EventBuilder::text_note(content, tags).to_event(&keys).unwrap();
+                            let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event, relay_url[1], file_path_str).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_url[1], file_path_str).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
@@ -159,13 +160,13 @@ async fn main() {
             ];
             tags.extend(published_event_ids);
 
-            let event = EventBuilder::text_note(content, tags).to_event(&keys).unwrap();
-            
+            let event_builder = EventBuilder::text_note(content.clone()).tags(tags);
+
             // Use a dummy hash and file_path_str for the linking event, as it's not tied to a single file
             publish_nostr_event_if_release(
-                hex::encode(Sha256::digest(event.as_json().as_bytes())),
+                hex::encode(Sha256::digest(content.as_bytes())),
                 keys,
-                event,
+                event_builder,
                 relay_url[1],
                 "build_manifest.json",
             ).await;
