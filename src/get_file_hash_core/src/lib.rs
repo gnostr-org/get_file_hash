@@ -1,5 +1,7 @@
 use std::process::Command;
 use std::path::PathBuf;
+use nostr_sdk::prelude::*;
+use serde_json::json;
 
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
@@ -65,4 +67,43 @@ pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     .lines()
     .filter_map(|line| Some(String::from(line)))
     .collect()
+}
+
+pub async fn publish_metadata_event(
+    keys: &Keys,
+    relay_url: &str,
+    picture_url: &str,
+    banner_url: &str,
+    file_path_str: &str,
+) {
+    let client = nostr_sdk::Client::new(keys);
+
+    if let Err(e) = client.add_relay(relay_url).await {
+        println!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
+        return;
+    }
+    client.connect().await;
+
+    let metadata_json = json!({
+        "picture": picture_url,
+        "banner": banner_url,
+        "name": file_path_str,
+        "about": format!("Metadata for file event: {}", file_path_str),
+    });
+
+    let metadata = serde_json::from_str::<nostr_sdk::Metadata>(&metadata_json.to_string())
+        .expect("Failed to parse metadata JSON");
+
+    let event = EventBuilder::metadata(&metadata)
+        .to_event(keys)
+        .unwrap();
+
+    match client.send_event(event).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published Nostr metadata event for {}: {}", file_path_str, event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);
+        }
+    }
 }

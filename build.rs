@@ -7,46 +7,6 @@ use sha2::{Digest, Sha256};
 use hex;
 use std::path::PathBuf;
 use std::io::Write;
-use serde_json::json;
-
-async fn publish_metadata_event(
-    keys: &Keys,
-    relay_url: &str,
-    picture_url: &str,
-    banner_url: &str,
-    file_path_str: &str,
-) {
-    let client = nostr_sdk::Client::new(keys);
-
-    if let Err(e) = client.add_relay(relay_url).await {
-        println!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
-        return;
-    }
-    client.connect().await;
-
-    let metadata_json = json!({
-        "picture": picture_url,
-        "banner": banner_url,
-        "name": file_path_str,
-        "about": format!("Metadata for file event: {}", file_path_str),
-    });
-
-    let metadata = serde_json::from_str::<nostr_sdk::Metadata>(&metadata_json.to_string())
-        .expect("Failed to parse metadata JSON");
-
-    let event = EventBuilder::metadata(&metadata)
-        .to_event(keys)
-        .unwrap();
-
-    match client.send_event(event).await {
-        Ok(event_id) => {
-            println!("cargo:warning=Published Nostr metadata event for {}: {}", file_path_str, event_id);
-        }
-        Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);
-        }
-    }
-}
 
 async fn publish_nostr_event_if_release(
 	hash: String,
@@ -162,7 +122,7 @@ async fn main() {
                             }
 
                             // Publish metadata event
-                            publish_metadata_event(
+                            get_file_hash_core::publish_metadata_event(
                                 &keys,
                                 relay_url[1],
                                 "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
