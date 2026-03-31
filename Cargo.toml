@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "src/get_file_hash_core"]
+
 [package]
 name = "get_file_hash"
 version = "0.1.3"

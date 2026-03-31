@@ -111,3 +111,89 @@ pub async fn publish_metadata_event(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::Write;
+    use sha2::{Digest, Sha256};
+    use tempfile;
+    use super::get_git_tracked_files;
+    use std::process::Command;
+
+    // Test for get_file_hash! macro
+    #[test]
+    fn test_get_file_hash() {
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("test_file.txt");
+        let content = "Hello, world!";
+        File::create(&file_path).unwrap().write_all(content.as_bytes()).unwrap();
+
+        // The macro expects a string literal, so we need to construct the path at compile time.
+        // This is a limitation for testing, normally you'd use it with a known file.
+        // For testing, we'll manually verify a file known to be in the project.
+        // Let's test `lib.rs` itself for a more realistic scenario.
+        let macro_hash = get_file_hash!("lib.rs");
+
+        // We will assert on a known file within the crate.
+        let bytes = include_bytes!("lib.rs");
+        let mut hasher_manual = Sha256::new();
+        hasher_manual.update(bytes);
+        let expected_hash_lib_rs = hasher_manual.finalize()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+
+        assert_eq!(macro_hash, expected_hash_lib_rs);
+
+        // Test with another known file, e.g., Cargo.toml of the core crate
+        let cargo_toml_hash = get_file_hash!("../Cargo.toml");
+        let cargo_toml_bytes = include_bytes!("../Cargo.toml");
+        let mut cargo_toml_hasher = Sha256::new();
+        cargo_toml_hasher.update(cargo_toml_bytes);
+        let expected_cargo_toml_hash = cargo_toml_hasher.finalize()
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+        assert_eq!(cargo_toml_hash, expected_cargo_toml_hash);
+    }
+
+    #[test]
+    fn test_get_git_tracked_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo_path = dir.path();
+
+        // Initialize a git repository
+        Command::new("git")
+            .arg("init")
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to initialize git repo");
+
+        // Create some files
+        let file1_path = repo_path.join("file1.txt");
+        File::create(&file1_path).unwrap().write_all(b"content1").unwrap();
+        let file2_path = repo_path.join("file2.txt");
+        File::create(&file2_path).unwrap().write_all(b"content2").unwrap();
+
+        // Add and commit files
+        Command::new("git")
+            .arg("add")
+            .arg(".")
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to git add files");
+        Command::new("git")
+            .arg("commit")
+            .arg("-m")
+            .arg("Initial commit")
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to git commit");
+
+        let tracked_files = get_git_tracked_files(&repo_path.to_path_buf());
+        assert_eq!(tracked_files.len(), 2);
+        assert!(tracked_files.contains(&"file1.txt".to_string()));
+        assert!(tracked_files.contains(&"file2.txt".to_string()));
+    }
+}
