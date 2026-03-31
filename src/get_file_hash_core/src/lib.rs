@@ -1,3 +1,6 @@
+use std::process::Command;
+use std::path::PathBuf;
+
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
 /// This macro takes a string literal representing a file path, reads the file's bytes
@@ -12,7 +15,6 @@
 /// let hash = get_file_hash!("lib.rs");
 /// println!("Hash: {}", hash);
 /// ```
-pub use get_file_hash_proc_macro::get_files_recursive;
 
 #[macro_export]
 macro_rules! get_file_hash {
@@ -49,4 +51,18 @@ macro_rules! file_hash_as_nostr_private_key {
         let hash_hex = $crate::get_file_hash!($file_path);
         nostr::Keys::from_hex_secret_key(hash_hex).expect("Failed to create Nostr Keys from file hash")
     }};
+}
+
+pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
+    String::from_utf8_lossy(
+        &Command::new("git")
+            .arg("ls-files")
+            .current_dir(dir)
+            .output()
+            .expect("Failed to execute git ls-files")
+            .stdout
+    )
+    .lines()
+    .filter_map(|line| Some(String::from(line)))
+    .collect()
 }
