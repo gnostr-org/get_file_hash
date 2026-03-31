@@ -9,12 +9,14 @@ use std::path::PathBuf;
 use std::io::Write;
 
 async fn publish_nostr_event_if_release(
+	hash: String,
     keys: Keys,
     event: Event,
     relay_url: &str,
     file_path_str: &str,
 ) {
     let client = nostr_sdk::Client::new(&keys);
+	let public_key = keys.public_key().to_string();
 
     if let Err(e) = client.add_relay(relay_url).await {
         println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
@@ -34,15 +36,21 @@ async fn publish_nostr_event_if_release(
     match client.send_event(event.clone()).await {
         Ok(event_id) => {
             println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id);
-            let filename = format!("{}.json", event_id);
+            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_id);
             let file_path = output_dir.join(&filename);
+            if let Some(parent) = file_path.parent() {
+                if let Err(e) = fs::create_dir_all(parent) {
+                    println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
+                    return;
+                }
+            }
             if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
                 println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
             } else {
                 println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
             }
 
-            let public_key_dir = output_dir.join("public_key");
+            let public_key_dir = output_dir.join(public_key);
             if let Err(e) = fs::create_dir_all(&public_key_dir) {
                 println!("cargo:warning=Failed to create public key directory {}: {}", public_key_dir.display(), e);
                 return;
@@ -50,7 +58,7 @@ async fn publish_nostr_event_if_release(
 
             let public_key_filename = format!("{}.json", file_path_str.replace("/", "_").replace(".", "_"));
             let public_key_file_path = public_key_dir.join(&public_key_filename);
-            if let Err(e) = fs::File::create(&public_key_file_path).and_then(|mut file| write!(file, "{}", keys.public_key().to_string())) {
+            if let Err(e) = fs::File::create(&public_key_file_path).and_then(|mut file| write!(file, "{:?}", keys)) {
                 println!("cargo:warning=Failed to write public key to file {}: {}", public_key_file_path.display(), e);
             } else {
                 println!("cargo:warning=Successfully wrote public key to {}", public_key_file_path.display());
@@ -112,13 +120,13 @@ async fn main() {
                     let result = hasher.finalize();
                     let file_hash_hex = hex::encode(result);
 
-                    match SecretKey::from_hex(&file_hash_hex) {
+                    match SecretKey::from_hex(&file_hash_hex.clone()) {
                         Ok(secret_key) => {
                             let keys = Keys::new(secret_key);
                             let content = String::from_utf8_lossy(&bytes).into_owned();
                             let event = EventBuilder::text_note(content, vec![]).to_event(&keys).unwrap();
 
-                            publish_nostr_event_if_release(keys, event, relay_url[1], file_path_str).await;
+                            publish_nostr_event_if_release(file_hash_hex, keys, event, relay_url[1], file_path_str).await;
                         }
                         Err(e) => {
                             println!("cargo:warning=Failed to derive Nostr secret key for {}: {}", file_path_str, e);
