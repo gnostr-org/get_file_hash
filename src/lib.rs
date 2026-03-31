@@ -3,7 +3,7 @@
 //! This macro allows you to compute the SHA-256 hash of a file at compile time,
 //! embedding the resulting hash string directly into your Rust executable.
 
-pub use get_file_hash_core::get_file_hash;
+pub use get_file_hash_core::{get_file_hash, get_files_recursive};
 
 /// The SHA-256 hash of this crate's `build.rs` at the time of compilation.
 pub const BUILD_HASH: &str = env!("BUILD_HASH");
@@ -14,11 +14,15 @@ pub const CARGO_TOML_HASH: &str = env!("CARGO_TOML_HASH");
 /// The SHA-256 hash of this crate's `src/lib.rs` at the time of compilation.
 pub const LIB_HASH: &str = env!("LIB_HASH");
 
+/// The SHA-256 hash of `src/get_file_hash_core/src/lib.rs` at the time of compilation.
+pub const CORE_LIB_HASH: &str = env!("CORE_HASH");
+
+
 #[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};
 
-    use super::*; // Now includes CARGO_TOML_HASH
+    use super::*;
 
     /// Verifies that the exported CARGO_TOML_HASH is not empty.
     #[test]
@@ -37,6 +41,12 @@ mod tests {
             "Verified src/get_file_hash_core/src/lib.rs Hash:\n{}",
             CORE_LIB_HASH
         );
+
+        let all_files: Vec<String> = get_files_recursive!(".");
+        println!("All files recursively found:");
+        for file in all_files {
+            println!("- {}", file);
+        }
     }
 
     /// Tests that the `get_file_hash!` macro correctly computes the SHA-256

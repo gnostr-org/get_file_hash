@@ -12,6 +12,8 @@
 /// let hash = get_file_hash!("lib.rs");
 /// println!("Hash: {}", hash);
 /// ```
+pub use get_file_hash_proc_macro::get_files_recursive;
+
 #[macro_export]
 macro_rules! get_file_hash {
     ($file_path:expr) => {{
