@@ -4,9 +4,8 @@ use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::get_git_tracked_files;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::{Client, EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::get_relay_urls;
+use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
+
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
 use sha2::{Digest, Sha256};
@@ -25,7 +24,7 @@ async fn publish_nostr_event_if_release(
     relay_urls: &[String],
     file_path_str: &str,
 ) -> Option<EventId> {
-    let mut client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::Client::new(keys.clone());
 	let public_key = keys.public_key().to_string();
 
     for relay_url in relay_urls {
@@ -106,6 +105,7 @@ async fn main() {
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
     if cfg!(not(debug_assertions)) {
+
         // This code only runs in release builds
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
 
