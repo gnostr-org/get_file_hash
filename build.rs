@@ -41,6 +41,20 @@ async fn publish_nostr_event_if_release(
             } else {
                 println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
             }
+
+            let public_key_dir = output_dir.join("public_key");
+            if let Err(e) = fs::create_dir_all(&public_key_dir) {
+                println!("cargo:warning=Failed to create public key directory {}: {}", public_key_dir.display(), e);
+                return;
+            }
+
+            let public_key_filename = format!("{}.json", file_path_str.replace("/", "_").replace(".", "_"));
+            let public_key_file_path = public_key_dir.join(&public_key_filename);
+            if let Err(e) = fs::File::create(&public_key_file_path).and_then(|mut file| write!(file, "{}", keys.public_key().to_string())) {
+                println!("cargo:warning=Failed to write public key to file {}: {}", public_key_file_path.display(), e);
+            } else {
+                println!("cargo:warning=Successfully wrote public key to {}", public_key_file_path.display());
+            }
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
