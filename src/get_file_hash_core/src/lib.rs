@@ -5,6 +5,9 @@ use nostr_sdk::prelude::*;
 #[cfg(feature = "nostr")]
 use serde_json::json;
 
+#[cfg(feature = "nostr")]
+const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
+
 
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
