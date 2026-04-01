@@ -94,13 +94,9 @@ async fn main() {
 
     let build_hash = get_file_hash!("build.rs");
     println!("cargo:rustc-env=BUILD_HASH={}", build_hash);
-                                //prepend get_file_hash version to path
-    let core_hash = get_file_hash!(/*get_file_hash-version*/"src/get_file_hash_core/src/lib.rs");
-    println!("cargo:rustc-env=CORE_HASH={}", core_hash);
 
     println!("cargo:rerun-if-changed=Cargo.toml");
     println!("cargo:rerun-if-changed=src/lib.rs");
-    println!("cargo:rerun-if-changed=src/get_file_hash_core/src/lib.rs");
     println!("cargo:rerun-if-changed=build.rs");
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]

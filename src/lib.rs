@@ -14,10 +14,6 @@ pub const CARGO_TOML_HASH: &str = env!("CARGO_TOML_HASH");
 /// The SHA-256 hash of this crate's `src/lib.rs` at the time of compilation.
 pub const LIB_HASH: &str = env!("LIB_HASH");
 
-/// The SHA-256 hash of `src/get_file_hash_core/src/lib.rs` at the time of compilation.
-pub const CORE_LIB_HASH: &str = env!("CORE_HASH");
-
-
 #[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};

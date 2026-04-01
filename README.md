@@ -52,7 +52,7 @@ cargo run --bin readme > README.md
 ## [`build.rs`](build.rs)
 
 *   **Target File:** `build.rs`
-*   **SHA-256 Hash:** 261494f3fc035fbdb5111a474e9735f901281d848106b6d8b4cad13dd67646c1
+*   **SHA-256 Hash:** a226f2e3757ba9cd4839c4082dc9755a3fb9e827d3278bcc78e36bd77ddf5bd7
 *   **Status:** Integrity Verified..
 
 ##
@@ -60,7 +60,7 @@ cargo run --bin readme > README.md
 ## [`Cargo.toml`](Cargo.toml)
 
 *   **Target File:** `Cargo.toml`
-*   **SHA-256 Hash:** 17ffb9612f433a0bf2cf49065e7e3d72aede763a6bb21529fe8be2db90a31631
+*   **SHA-256 Hash:** 5e1812eec540dfaaa0cc628dff96b1193527faa86b11f9f5a8222a63816d17cc
 *   **Status:** Integrity Verified..
 
 ##
@@ -68,6 +68,6 @@ cargo run --bin readme > README.md
 ## [`src/lib.rs`](src/lib.rs)
 
 *   **Target File:** `src/lib.rs`
-*   **SHA-256 Hash:** 23c8235b4d8c227df18059fa1f7490b5fbe7db2fc423741e85440d82a60ac45f
+*   **SHA-256 Hash:** e8f219b4d6c88a33989a8c1b43dcfbe244d89e81fe5e29a64e808fd534702e81
 *   **Status:** Integrity Verified..
 
