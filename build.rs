@@ -102,16 +102,9 @@ async fn publish_nostr_event_if_release(
 
 #[tokio::main]
 async fn main() {
-    //println!("cargo:rerun-if-changed=ALWAYS_RUN_NONEXISTENT_FILE");
-
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
-    if !is_git_repo {
-        println!("cargo:rustc-cfg=is_published_source");
-    } else {
-        println!("cargo:rerun-if-changed=ALWAYS_RUN_NONEXISTENT_FILE");
-    }
 
     println!("cargo:rustc-env=CARGO_PKG_NAME={}", env!("CARGO_PKG_NAME"));
     println!("cargo:rustc-env=CARGO_PKG_VERSION={}", env!("CARGO_PKG_VERSION"));

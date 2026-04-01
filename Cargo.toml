@@ -15,7 +15,6 @@ repository = "https://github.com/gnostr-org/get_file_hash"
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 
-
 [dependencies]
 get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.2", features = ["nostr"] }
 sha2 = "0.11.0"

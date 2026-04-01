@@ -20,11 +20,11 @@ pub const CARGO_PKG_NAME: &str = env!("CARGO_PKG_NAME");
 /// The version of the package as specified in Cargo.toml.
 pub const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cfg(not(is_published_source))]
+#[cfg(feature = "nostr")]
 /// The git commit hash of the repository at the time of compilation.
 pub const GIT_COMMIT_HASH: &str = env!("GIT_COMMIT_HASH");
 
-#[cfg(not(is_published_source))]
+#[cfg(feature = "nostr")]
 /// The git branch of the repository at the time of compilation.
 pub const GIT_BRANCH: &str = env!("GIT_BRANCH");
 
@@ -54,7 +54,7 @@ mod tests {
         assert!(!CARGO_PKG_VERSION.is_empty());
         println!("Verified Package Version:\n{}", CARGO_PKG_VERSION);
 
-        #[cfg(not(is_published_source))]
+        #[cfg(feature = "nostr")]
         {
             assert!(!GIT_COMMIT_HASH.is_empty());
             println!("Verified Git Commit Hash:\n{}", GIT_COMMIT_HASH);
