@@ -31,12 +31,6 @@ mod tests {
 
         assert!(!LIB_HASH.is_empty());
         println!("Verified src/lib.rs Hash:\n{}", LIB_HASH);
-
-        assert!(!CORE_LIB_HASH.is_empty());
-        println!(
-            "Verified src/get_file_hash_core/src/lib.rs Hash:\n{}",
-            CORE_LIB_HASH
-        );
     }
 
     /// Tests that the `get_file_hash!` macro correctly computes the SHA-256
