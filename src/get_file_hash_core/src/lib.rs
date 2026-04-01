@@ -133,7 +133,6 @@ macro_rules! file_hash_as_nostr_private_key {
 ///         "../Cargo.toml" // Use a known file in your project
 ///     );
 /// }
-/// ```
 #[cfg(feature = "nostr")]
 #[macro_export]
 macro_rules! repository_announcement {
@@ -868,8 +867,7 @@ mod tests {
             "test_repository_announcement_event_metadata",
         ).await;
 
-        use nostr_sdk::EventId;
-        use std::str::FromStr;
+
         let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         repository_announcement!(
