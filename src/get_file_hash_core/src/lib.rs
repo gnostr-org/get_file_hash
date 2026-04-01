@@ -718,7 +718,7 @@ mod tests {
     use tempfile;
     use super::get_git_tracked_files;
     use std::process::Command;
-    use nostr_sdk::{Keys, EventId};
+    use nostr_sdk::EventId;
     use std::str::FromStr;
 
     // Dummy EventId for tests that require a build_manifest_event_id
@@ -857,6 +857,7 @@ mod tests {
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
         let clone_url = "git@example.com:test/test-nip34-repo.git";
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         let _file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
 
         // This test primarily checks that the macro and function compile and execute without panicking.
