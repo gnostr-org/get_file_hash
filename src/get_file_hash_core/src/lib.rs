@@ -163,7 +163,7 @@ macro_rules! repository_announcement {
             $clone_url,
             &euc_hash,
             d_tag_value,
-            Some($build_manifest_event_id), // Correct: Wrap in Some()
+            $build_manifest_event_id, // Correct: Pass directly
         ).await;
     }};
 }
@@ -250,7 +250,7 @@ macro_rules! publish_patch {
 ///         d_tag,
 ///         commit_id,
 ///         clone_url,
-///         title.unwrap(),
+///         title,
 ///         None
 ///     );
 /// }
@@ -298,8 +298,8 @@ macro_rules! publish_pull_request {
             $d_tag_value,
             $commit_id,
             $clone_url,
-            Some($title),
-            Some($build_manifest_event_id),
+            $title,
+            $build_manifest_event_id,
         ).await;
     }};
 }
@@ -951,8 +951,8 @@ mod tests {
             description,
             clone_url,
             "../Cargo.toml", // Pass the string literal directly, correcting path for include_bytes!
-            &dummy_build_manifest_id
-        );
+            Some(&dummy_build_manifest_id)
+            );
     }
 
     #[cfg(feature = "nostr")]
@@ -1015,9 +1015,9 @@ mod tests {
             d_tag,
             commit_id,
             clone_url,
-            title.unwrap(),
-            &dummy_build_manifest_id
-        );
+            Some(title.unwrap()),
+            Some(&dummy_build_manifest_id)
+            );
         // Test without a title
         publish_pull_request!(
             &keys,
