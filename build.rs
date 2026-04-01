@@ -8,11 +8,10 @@ use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
+use std::path::PathBuf;
 use sha2::{Digest, Sha256};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use ::hex;
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-use std::path::PathBuf;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::io::Write;
 
