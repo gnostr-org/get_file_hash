@@ -359,7 +359,8 @@ macro_rules! publish_pr_update {
             $pr_event_id,
             $updated_commit_id,
             $updated_clone_url,
-            Some($build_manifest_event_id),
+            $build_manifest_event_id,
+
         ).await;
     }};
 }
@@ -1021,7 +1022,7 @@ mod tests {
             d_tag,
             commit_id,
             clone_url
-        )
+        );
     }
 
     #[cfg(feature = "nostr")]
@@ -1037,6 +1038,7 @@ mod tests {
         let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
         let updated_commit_id = "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0";
         let updated_clone_url = "git@example.com:test/pr-branch-updated.git";
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
