@@ -252,6 +252,54 @@ macro_rules! publish_pull_request {
     }};
 }
 
+/// Publishes a NIP-34 PR update event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, the repository's d-tag value,
+/// the event ID of the original pull request, the new commit ID,
+/// and the new clone URL.
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::publish_pr_update;
+/// use nostr_sdk::Keys;
+/// use nostr_sdk::EventId;
+/// use std::str::FromStr;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let d_tag = "my-awesome-repo";
+///     let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Example PR Event ID
+///     let updated_commit_id = "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0";
+///     let updated_clone_url = "git@github.com:user/my-feature-branch-v2.git";
+///
+///     publish_pr_update!(
+///         &keys,
+///         &relay_urls,
+///         d_tag,
+///         &pr_event_id,
+///         updated_commit_id,
+///         updated_clone_url
+///     );
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! publish_pr_update {
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $pr_event_id:expr, $updated_commit_id:expr, $updated_clone_url:expr) => {{
+        $crate::publish_pr_update_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $pr_event_id,
+            $updated_commit_id,
+            $updated_clone_url,
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
@@ -419,6 +467,44 @@ pub async fn publish_pull_request_event(
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Pull Request event for commit {}: {}", commit_id, e);
+        }
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_pr_update_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    d_tag_value: &str,
+    pr_event_id: &EventId,
+    updated_commit_id: &str,
+    updated_clone_url: &str,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for PR update {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1619), // NIP-34 PR Update kind
+        "", // Content is empty for PR update
+    ).tags(vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["p", pr_event_id.to_string().as_str()]).expect("Failed to create PR event ID tag"),
+        Tag::parse(["commit", updated_commit_id]).expect("Failed to create updated commit ID tag"),
+        Tag::parse(["clone", updated_clone_url]).expect("Failed to create updated clone URL tag"),
+    ]);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 PR Update event for PR {}: {:?}", pr_event_id.to_string(), event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 PR Update event for PR {}: {}", pr_event_id.to_string(), e);
         }
     }
 }
@@ -630,6 +716,32 @@ mod tests {
             d_tag,
             commit_id,
             clone_url
+        );
+    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_publish_pr_update_event() {
+        use super::get_relay_urls;
+        use nostr_sdk::{Keys, EventId};
+        use std::str::FromStr;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let d_tag = "test-repo-for-pr-update";
+        let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
+        let updated_commit_id = "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0";
+        let updated_clone_url = "git@example.com:test/pr-branch-updated.git";
+
+        // This test primarily checks that the macro and function compile and execute without panicking.
+        // Actual publishing success depends on external network conditions.
+        publish_pr_update!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            &pr_event_id, // Pass a reference to pr_event_id
+            updated_commit_id,
+            updated_clone_url
         );
     }
 }
