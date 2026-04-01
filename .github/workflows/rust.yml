@@ -23,3 +23,11 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Run general tests
+      run: cargo test
+    - name: Run general nostr tests
+      run: cargo test --features nostr
+    - name: Run get_file_hash_core tests
+      run: cargo test -p get_file_hash_core
+    - name: Run get_file_hash_core nostr tests
+      run: cargo test -p get_file_hash_core --features nostr
