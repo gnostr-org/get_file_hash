@@ -843,6 +843,8 @@ mod tests {
         let _ = Command::new("git")
             .arg("init")
             .current_dir(repo_path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
             .output()
             .expect("Failed to initialize git repo");
 
@@ -857,6 +859,8 @@ mod tests {
             .arg("add")
             .arg(".")
             .current_dir(repo_path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
             .output()
             .expect("Failed to git add files");
         let _ = Command::new("git")
@@ -864,6 +868,8 @@ mod tests {
             .arg("-m")
             .arg("Initial commit")
             .current_dir(repo_path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
             .output()
             .expect("Failed to git commit");
 
