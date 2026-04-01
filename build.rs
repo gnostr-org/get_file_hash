@@ -4,6 +4,7 @@ use get_file_hash_core::get_file_hash;
 use sha2::{Digest, Sha256};
 
 fn main() {
+    println!("cargo::rustc-check-cfg=cfg(is_published_source)");
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 

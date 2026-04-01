@@ -14,6 +14,20 @@ pub const CARGO_TOML_HASH: &str = env!("CARGO_TOML_HASH");
 /// The SHA-256 hash of this crate's `src/lib.rs` at the time of compilation.
 pub const LIB_HASH: &str = env!("LIB_HASH");
 
+/// The name of the package as specified in Cargo.toml.
+pub const CARGO_PKG_NAME: &str = env!("CARGO_PKG_NAME");
+
+/// The version of the package as specified in Cargo.toml.
+pub const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cfg(not(is_published_source))]
+/// The git commit hash of the repository at the time of compilation.
+pub const GIT_COMMIT_HASH: &str = env!("GIT_COMMIT_HASH");
+
+#[cfg(not(is_published_source))]
+/// The git branch of the repository at the time of compilation.
+pub const GIT_BRANCH: &str = env!("GIT_BRANCH");
+
 #[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};
@@ -32,8 +46,22 @@ mod tests {
 {}", CARGO_TOML_HASH);
 
         assert!(!LIB_HASH.is_empty());
-        println!("Verified src/lib.rs Hash:
-{}", LIB_HASH);
+        println!("Verified src/lib.rs Hash:\n{}", LIB_HASH);
+
+        assert!(!CARGO_PKG_NAME.is_empty());
+        println!("Verified Package Name:\n{}", CARGO_PKG_NAME);
+
+        assert!(!CARGO_PKG_VERSION.is_empty());
+        println!("Verified Package Version:\n{}", CARGO_PKG_VERSION);
+
+        #[cfg(not(is_published_source))]
+        {
+            assert!(!GIT_COMMIT_HASH.is_empty());
+            println!("Verified Git Commit Hash:\n{}", GIT_COMMIT_HASH);
+
+            assert!(!GIT_BRANCH.is_empty());
+            println!("Verified Git Branch:\n{}", GIT_BRANCH);
+        }
     }
 
     /// Tests that the `get_file_hash!` macro correctly computes the SHA-256
