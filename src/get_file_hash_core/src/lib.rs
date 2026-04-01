@@ -196,6 +196,62 @@ macro_rules! publish_patch {
     }};
 }
 
+/// Publishes a NIP-34 pull request event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, the repository's d-tag value,
+/// the commit ID of the pull request, a clone URL where the work can be fetched,
+/// and an optional title for the pull request.
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::publish_pull_request;
+/// use nostr_sdk::Keys;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let d_tag = "my-awesome-repo";
+///     let commit_id = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0";
+///     let clone_url = "git@github.com:user/my-feature-branch.git";
+///     let title = Some("Feat: Add new awesome feature");
+///
+///     publish_pull_request!(
+///         &keys,
+///         &relay_urls,
+///         d_tag,
+///         commit_id,
+///         clone_url,
+///         title
+///     ).await;
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! publish_pull_request {
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr) => {{
+        $crate::publish_pull_request_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            $clone_url,
+            None,
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $title:expr) => {{
+        $crate::publish_pull_request_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            $clone_url,
+            Some($title),
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
