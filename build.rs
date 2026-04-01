@@ -7,9 +7,34 @@ fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
+    // Detect if this is a published source (e.g., from crates.io) vs. a git repository.
+    // We consider it a published source if there's no .git directory.
     if !is_git_repo {
         println!("cargo:rustc-cfg=is_published_source");
     }
+
+    println!("cargo:rustc-env=CARGO_PKG_NAME={}", env!("CARGO_PKG_NAME"));
+    println!("cargo:rustc-env=CARGO_PKG_VERSION={}", env!("CARGO_PKG_VERSION"));
+
+    if is_git_repo {
+        let git_commit_hash = std::process::Command::new("git")
+            .args(&["rev-parse", "HEAD"])
+            .output()
+            .expect("Failed to execute git command for commit hash")
+            .stdout;
+        let git_commit_hash_str = String::from_utf8(git_commit_hash).unwrap();
+        println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str.trim());
+
+        let git_branch = std::process::Command::new("git")
+            .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+            .output()
+            .expect("Failed to execute git command for branch name")
+            .stdout;
+        let git_branch_str = String::from_utf8(git_branch).unwrap();
+        println!("cargo:rustc-env=GIT_BRANCH={}", git_branch_str.trim());
+    }
+
+    println!("cargo:rerun-if-changed=.git/HEAD");
 
     let cargo_toml_hash = get_file_hash!("Cargo.toml");
     println!("cargo:rustc-env=CARGO_TOML_HASH={}", cargo_toml_hash);
