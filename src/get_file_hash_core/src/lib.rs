@@ -223,8 +223,8 @@ macro_rules! publish_patch {
 ///         d_tag,
 ///         commit_id,
 ///         clone_url,
-///         title
-///     ).await;
+///         title.unwrap()
+///     );
 /// }
 /// ```
 #[cfg(feature = "nostr")]
@@ -597,6 +597,39 @@ mod tests {
             d_tag,
             commit_id,
             "lib.rs" // Use an existing file for the patch content
+        );
+    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_publish_pull_request_event() {
+        use super::{publish_pull_request, get_relay_urls};
+        use nostr_sdk::Keys;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let d_tag = "test-repo-for-pr";
+        let commit_id = "0123456789abcdef0123456789abcdef01234567";
+        let clone_url = "git@example.com:test/pr-branch.git";
+        let title = Some("Feat: Implement NIP-34 PR");
+
+        // Test with a title
+        publish_pull_request!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            commit_id,
+            clone_url,
+            title.unwrap()
+        );
+
+        // Test without a title
+        publish_pull_request!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            commit_id,
+            clone_url
         );
     }
 }
