@@ -1,7 +1,7 @@
-[workspace]
-members = ["cargo:. ", "src/get_file_hash_core"]
-
+# dist plan --output-format=json > plan-dist-manifest.json
 # Config for 'dist'
+[workspace]
+members = ["cargo:.", "cargo:src/get_file_hash_core"]
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.30.3"
