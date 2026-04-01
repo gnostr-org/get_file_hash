@@ -767,7 +767,7 @@ mod tests {
         let repo_path = dir.path();
 
         // Initialize a git repository
-        Command::new("git")
+        let _ = Command::new("git")
             .arg("init")
             .current_dir(repo_path)
             .output()
@@ -780,13 +780,13 @@ mod tests {
         File::create(&file2_path).unwrap().write_all(b"content2").unwrap();
 
         // Add and commit files
-        Command::new("git")
+        let _ = Command::new("git")
             .arg("add")
             .arg(".")
             .current_dir(repo_path)
             .output()
             .expect("Failed to git add files");
-        Command::new("git")
+        let _ = Command::new("git")
             .arg("commit")
             .arg("-m")
             .arg("Initial commit")
