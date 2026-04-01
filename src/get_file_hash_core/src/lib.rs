@@ -380,6 +380,50 @@ pub async fn publish_patch_event(
     }
 }
 
+#[cfg(feature = "nostr")]
+pub async fn publish_pull_request_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    d_tag_value: &str,
+    commit_id: &str,
+    clone_url: &str,
+    title: Option<&str>,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for pull request {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let mut tags = vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
+        Tag::parse(["clone", clone_url]).expect("Failed to create clone tag"),
+    ];
+
+    if let Some(t) = title {
+        tags.push(Tag::parse(["title", t]).expect("Failed to create title tag"));
+    }
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1618), // NIP-34 Pull Request kind
+        "", // Content can be empty or a description for the PR
+    ).tags(tags);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 Pull Request event for commit {}: {:?}", commit_id, event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 Pull Request event for commit {}: {}", commit_id, e);
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::fs::File;
