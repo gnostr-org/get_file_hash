@@ -163,7 +163,7 @@ macro_rules! repository_announcement {
             $clone_url,
             &euc_hash,
             d_tag_value,
-            $build_manifest_event_id, // Pass directly, macro arg should be Option<&EventId>
+            Some($build_manifest_event_id), // Correct: Wrap in Some()
         ).await;
     }};
 }
@@ -250,7 +250,8 @@ macro_rules! publish_patch {
 ///         d_tag,
 ///         commit_id,
 ///         clone_url,
-///         title.unwrap()
+///         title.unwrap(),
+///         None
 ///     );
 /// }
 /// ```
@@ -264,6 +265,7 @@ macro_rules! publish_pull_request {
             $d_tag_value,
             $commit_id,
             $clone_url,
+            None, // Pass None for build_manifest_event_id
             None,
         ).await;
     }};
@@ -610,6 +612,7 @@ pub async fn publish_pull_request_event(
     commit_id: &str,
     clone_url: &str,
     title: Option<&str>,
+    build_manifest_event_id: Option<&EventId>,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
@@ -628,6 +631,10 @@ pub async fn publish_pull_request_event(
 
     if let Some(t) = title {
         tags.push(Tag::parse(["title", t]).expect("Failed to create title tag"));
+    }
+
+    if let Some(event_id) = build_manifest_event_id {
+        tags.push(Tag::event(*event_id));
     }
 
     let event_builder = EventBuilder::new(
@@ -653,6 +660,7 @@ pub async fn publish_pr_update_event(
     pr_event_id: &EventId,
     updated_commit_id: &str,
     updated_clone_url: &str,
+    build_manifest_event_id: Option<&EventId>,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
@@ -663,15 +671,21 @@ pub async fn publish_pr_update_event(
     }
     client.connect().await;
 
-    let event_builder = EventBuilder::new(
-        Kind::Custom(1619), // NIP-34 PR Update kind
-        "", // Content is empty for PR update
-    ).tags(vec![
+    let mut tags = vec![
         Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["p", pr_event_id.to_string().as_str()]).expect("Failed to create PR event ID tag"),
         Tag::parse(["commit", updated_commit_id]).expect("Failed to create updated commit ID tag"),
         Tag::parse(["clone", updated_clone_url]).expect("Failed to create updated clone URL tag"),
-    ]);
+    ];
+
+    if let Some(event_id) = build_manifest_event_id {
+        tags.push(Tag::event(*event_id));
+    }
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1619), // NIP-34 PR Update kind
+        "", // Content is empty for PR update
+    ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
@@ -727,6 +741,7 @@ pub async fn publish_issue_event(
     issue_id: &str, // Unique identifier for the issue
     title: &str,
     content: &str,
+    build_manifest_event_id: Option<&EventId>,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
@@ -737,14 +752,20 @@ pub async fn publish_issue_event(
     }
     client.connect().await;
 
-    let event_builder = EventBuilder::new(
-        Kind::Custom(1621), // NIP-34 Issue kind
-        content,
-    ).tags(vec![
+    let mut tags = vec![
         Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["i", issue_id]).expect("Failed to create issue ID tag"),
         Tag::parse(["title", title]).expect("Failed to create title tag"),
-    ]);
+    ];
+
+    if let Some(event_id) = build_manifest_event_id {
+        tags.push(Tag::event(*event_id));
+    }
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1621), // NIP-34 Issue kind
+        content,
+    ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
@@ -926,7 +947,7 @@ mod tests {
             description,
             clone_url,
             "../Cargo.toml", // Pass the string literal directly, correcting path for include_bytes!
-            Some(&dummy_build_manifest_id)
+            &dummy_build_manifest_id
         );
     }
 
@@ -973,6 +994,7 @@ mod tests {
         let commit_id = "0123456789abcdef0123456789abcdef01234567";
         let clone_url = "git@example.com:test/pr-branch.git";
         let title = Some("Feat: Implement NIP-34 PR");
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         super::publish_metadata_event(
             &keys,
@@ -989,7 +1011,8 @@ mod tests {
             d_tag,
             commit_id,
             clone_url,
-            title.unwrap()
+            title.unwrap(),
+            &dummy_build_manifest_id
         );
         // Test without a title
         publish_pull_request!(
@@ -998,7 +1021,7 @@ mod tests {
             d_tag,
             commit_id,
             clone_url
-        );
+        )
     }
 
     #[cfg(feature = "nostr")]
@@ -1031,7 +1054,8 @@ mod tests {
             d_tag,
             &pr_event_id, // Pass a reference to pr_event_id
             updated_commit_id,
-            updated_clone_url
+            updated_clone_url,
+            Some(&dummy_build_manifest_id)
         );    }
 
     #[cfg(feature = "nostr")]
@@ -1045,6 +1069,9 @@ mod tests {
         let d_tag = "test-repo-for-state";
         let branch_name = "main";
         let commit_id = "abcde12345abcde12345abcde12345abcde12345";
+        use nostr_sdk::EventId;
+        use std::str::FromStr;
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1069,6 +1096,8 @@ mod tests {
     async fn test_publish_issue_event() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
+        use nostr_sdk::EventId;
+        use std::str::FromStr;
 
         let keys = Keys::generate();
         let relay_urls = get_relay_urls();
@@ -1076,6 +1105,7 @@ mod tests {
         let issue_id = "456";
         let title = "Feature: Implement NIP-34 Issues";
         let content = "This is a test issue to verify the NIP-34 issue macro implementation.";
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1093,6 +1123,8 @@ mod tests {
             d_tag,
             issue_id,
             title,
-            content
-        );    }
+            content,
+            &dummy_build_manifest_id
+        );
+    }
 }
