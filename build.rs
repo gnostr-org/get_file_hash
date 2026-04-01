@@ -17,17 +17,29 @@ use std::path::PathBuf;
 use std::io::Write;
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
+fn should_remove_relay(error_msg: &str) -> bool {
+    error_msg.contains("relay not connected") ||
+    error_msg.contains("not in web of trust") ||
+    error_msg.contains("blocked: not authorized") ||
+    error_msg.contains("timeout") ||
+    error_msg.contains("blocked: spam not permitted") ||
+    error_msg.contains("relay experienced an error trying to publish the latest event") ||
+    error_msg.contains("duplicate: event already broadcast")
+}
+
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
 	hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    relay_urls: &[String],
+    relay_urls: &mut Vec<String>,
     file_path_str: &str,
 ) -> Option<EventId> {
     let client = nostr_sdk::Client::new(keys.clone());
 	let public_key = keys.public_key().to_string();
 
-    for relay_url in relay_urls {
+    for i in (0..relay_urls.len()).rev() {
+        let relay_url = &relay_urls[i];
         if let Err(e) = client.add_relay(relay_url).await {
             println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
         }
@@ -46,9 +58,28 @@ async fn publish_nostr_event_if_release(
 
     let event = client.sign_event_builder(event_builder).await.unwrap();
 
-    match client.send_event(&event).await {        Ok(event_id) => {
-            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_id.val);
-            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_id.val.to_string());
+    match client.send_event(&event).await {        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
+
+            // Print successful relays
+            for relay_url in event_output.success.iter() {
+                println!("cargo:warning=Successfully published to relay: {}", relay_url);
+            }
+            // Print failed relays and remove "unfriendly" relays from the list
+            let mut relays_to_remove: Vec<String> = Vec::new();
+            for (relay_url, error_msg) in event_output.failed.iter() {
+                println!("cargo:warning=Failed to publish to relay {}: {}", relay_url, error_msg);
+                if should_remove_relay(error_msg) {
+                    relays_to_remove.push(relay_url.to_string());
+                }
+            }
+            // Remove failed relays from the list
+            relay_urls.retain(|url| !relays_to_remove.contains(url));
+            if !relays_to_remove.is_empty() {
+                println!("cargo:warning=Removed {} unresponsive relays from the list.", relays_to_remove.len());
+            }
+
+            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_output.val.to_string());
             let file_path = output_dir.join(&filename);
             if let Some(parent) = file_path.parent() {
                 if let Err(e) = fs::create_dir_all(parent) {
@@ -61,7 +92,7 @@ async fn publish_nostr_event_if_release(
             } else {
                 println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
             }
-            Some(event_id.val)
+            Some(event_output.val)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
@@ -78,7 +109,7 @@ async fn main() {
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
     #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    let relay_urls = get_file_hash_core::get_relay_urls();
+    let mut relay_urls = get_file_hash_core::get_relay_urls();
 
     if !is_git_repo {
         println!("cargo:rustc-cfg=is_published_source");
@@ -128,14 +159,14 @@ async fn main() {
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, &relay_urls, file_path_str).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
                             // Publish metadata event
                             get_file_hash_core::publish_metadata_event(
                                 &keys,
-                                &relay_urls,
+                                &mut relay_urls,
                                 "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
                                 "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
                                 file_path_str,
@@ -168,7 +199,7 @@ async fn main() {
                 hex::encode(Sha256::digest(content.as_bytes())),
                 keys,
                 event_builder,
-                &relay_urls,
+                &mut relay_urls,
                 "build_manifest.json",
             ).await;
         }
