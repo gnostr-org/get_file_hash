@@ -718,6 +718,12 @@ mod tests {
     use tempfile;
     use super::get_git_tracked_files;
     use std::process::Command;
+    use nostr_sdk::{Keys, EventId};
+    use std::str::FromStr;
+
+    // Dummy EventId for tests that require a build_manifest_event_id
+    const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
+
 
     // Test for get_file_hash! macro
     #[test]
@@ -864,7 +870,7 @@ mod tests {
 
         use nostr_sdk::EventId;
         use std::str::FromStr;
-        let dummy_build_manifest_id = EventId::from_str("f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0").unwrap();
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         repository_announcement!(
             &keys,
