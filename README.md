@@ -44,7 +44,43 @@ cargo run --bin readme > README.md
 ## [`src/bin/readme.rs`](src/bin/readme.rs)
 
 *   **Target File:** `src/bin/readme.rs`
-*   **SHA-256 Hash:** b337cb82aa8840ce7fcbcfbc9a0c2d2542d3eb1f2ab6358efba2d2f7a5af730c
+## NIP-34 Integration: Git Repository Events on Nostr
+
+This library provides a set of powerful macros and functions for integrating Git repository events with the Nostr protocol, adhering to the [NIP-34: Git Repositories on Nostr](https://github.com/nostr-protocol/nips/blob/master/34.md) specification.
+
+These tools allow you to publish various Git-related events to Nostr relays, enabling decentralized tracking and collaboration for your code repositories.
+
+### Available NIP-34 Macros
+
+Each macro provides a convenient way to publish specific NIP-34 event kinds:
+
+*   [`repository_announcement!`](#repository_announcement)
+    *   Publishes a `Repository Announcement` event (Kind 30617) to announce a new or updated Git repository.
+*   [`publish_patch!`](#publish_patch)
+    *   Publishes a `Patch` event (Kind 1617) containing a Git patch (diff) for a specific commit.
+*   [`publish_pull_request!`](#publish_pull_request)
+    *   Publishes a `Pull Request` event (Kind 1618) to propose changes and facilitate code review.
+*   [`publish_pr_update!`](#publish_pr_update)
+    *   Publishes a `Pull Request Update` event (Kind 1619) to update an existing pull request.
+*   [`publish_repository_state!`](#publish_repository_state)
+    *   Publishes a `Repository State` event (Kind 1620) to announce the current state of a branch (e.g., its latest commit).
+*   [`publish_issue!`](#publish_issue)
+    *   Publishes an `Issue` event (Kind 1621) to report bugs, request features, or track tasks.
+
+### Running NIP-34 Examples
+
+To see these macros in action, navigate to the `examples/` directory and run each example individually with the `nostr` feature enabled:
+
+```bash
+cargo run --example repository_announcement --features nostr
+cargo run --example publish_patch --features nostr
+cargo run --example publish_pull_request --features nostr
+cargo run --example publish_pr_update --features nostr
+cargo run --example publish_repository_state --features nostr
+cargo run --example publish_issue --features nostr
+```
+
+*   **SHA-256 Hash:** 6c6325c5a4c14f44cbda6ca53179ab3d6666ce7c916365668c6dd1d79215db59
 *   **Status:** Integrity Verified..
 
 ##
@@ -52,7 +88,7 @@ cargo run --bin readme > README.md
 ## [`build.rs`](build.rs)
 
 *   **Target File:** `build.rs`
-*   **SHA-256 Hash:** a226f2e3757ba9cd4839c4082dc9755a3fb9e827d3278bcc78e36bd77ddf5bd7
+*   **SHA-256 Hash:** c051757c6bf7160b4533cd91f8b33daceca615405105439d95b21c040629ace2
 *   **Status:** Integrity Verified..
 
 ##
@@ -60,7 +96,7 @@ cargo run --bin readme > README.md
 ## [`Cargo.toml`](Cargo.toml)
 
 *   **Target File:** `Cargo.toml`
-*   **SHA-256 Hash:** 5e1812eec540dfaaa0cc628dff96b1193527faa86b11f9f5a8222a63816d17cc
+*   **SHA-256 Hash:** fa5e8059a92c169c8544a16cba0535b8b55c7dc1c7bd9deda5a7efe8afc8ac4b
 *   **Status:** Integrity Verified..
 
 ##
@@ -68,6 +104,6 @@ cargo run --bin readme > README.md
 ## [`src/lib.rs`](src/lib.rs)
 
 *   **Target File:** `src/lib.rs`
-*   **SHA-256 Hash:** e8f219b4d6c88a33989a8c1b43dcfbe244d89e81fe5e29a64e808fd534702e81
+*   **SHA-256 Hash:** 8d6bbca3b8782587da9f73589aa15b42a1d9e7a10195fc997d843d7ff5e9e5e7
 *   **Status:** Integrity Verified..
 

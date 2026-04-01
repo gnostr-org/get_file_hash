@@ -79,6 +79,44 @@ const README_TEMPLATE_PART4: &str = r"##
 *   **Target File:** `src/lib.rs`
 ";
 
+const README_TEMPLATE_PART_NIP34: &str = r"## NIP-34 Integration: Git Repository Events on Nostr
+
+This library provides a set of powerful macros and functions for integrating Git repository events with the Nostr protocol, adhering to the [NIP-34: Git Repositories on Nostr](https://github.com/nostr-protocol/nips/blob/master/34.md) specification.
+
+These tools allow you to publish various Git-related events to Nostr relays, enabling decentralized tracking and collaboration for your code repositories.
+
+### Available NIP-34 Macros
+
+Each macro provides a convenient way to publish specific NIP-34 event kinds:
+
+*   [`repository_announcement!`](#repository_announcement)
+    *   Publishes a `Repository Announcement` event (Kind 30617) to announce a new or updated Git repository.
+*   [`publish_patch!`](#publish_patch)
+    *   Publishes a `Patch` event (Kind 1617) containing a Git patch (diff) for a specific commit.
+*   [`publish_pull_request!`](#publish_pull_request)
+    *   Publishes a `Pull Request` event (Kind 1618) to propose changes and facilitate code review.
+*   [`publish_pr_update!`](#publish_pr_update)
+    *   Publishes a `Pull Request Update` event (Kind 1619) to update an existing pull request.
+*   [`publish_repository_state!`](#publish_repository_state)
+    *   Publishes a `Repository State` event (Kind 1620) to announce the current state of a branch (e.g., its latest commit).
+*   [`publish_issue!`](#publish_issue)
+    *   Publishes an `Issue` event (Kind 1621) to report bugs, request features, or track tasks.
+
+### Running NIP-34 Examples
+
+To see these macros in action, navigate to the `examples/` directory and run each example individually with the `nostr` feature enabled:
+
+```bash
+cargo run --example repository_announcement --features nostr
+cargo run --example publish_patch --features nostr
+cargo run --example publish_pull_request --features nostr
+cargo run --example publish_pr_update --features nostr
+cargo run --example publish_repository_state --features nostr
+cargo run --example publish_issue --features nostr
+```
+
+";
+
 /// The main entry point of the application.
 ///
 /// This function calculates the SHA-256 hash of the `get_file_hash.rs` source
@@ -112,7 +150,7 @@ fn main() {
         "Integrity Verified."
     };
 
-    print!("{}{}", README_TEMPLATE_PART0, README_TEMPLATE_PART1);
+    print!("{}{}{}", README_TEMPLATE_PART0, README_TEMPLATE_PART1, README_TEMPLATE_PART_NIP34);
     println!("*   **SHA-256 Hash:** {}", self_hash);
     println!("*   **Status:** {}.\n", status_message);
     //
