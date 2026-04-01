@@ -149,6 +149,21 @@ macro_rules! repository_announcement {
             $clone_url,
             &euc_hash,
             d_tag_value,
+            None,
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $project_name:expr, $description:expr, $clone_url:expr, $file_for_euc:expr, $build_manifest_event_id:expr) => {{
+        let euc_hash = $crate::get_file_hash!($file_for_euc);
+        let d_tag_value = $project_name;
+        $crate::publish_repository_announcement_event(
+            $keys,
+            $relay_urls,
+            $project_name,
+            $description,
+            $clone_url,
+            &euc_hash,
+            d_tag_value,
+            Some($build_manifest_event_id),
         ).await;
     }};
 }
@@ -192,6 +207,18 @@ macro_rules! publish_patch {
             $d_tag_value,
             $commit_id,
             patch_content,
+            None, // Pass None for build_manifest_event_id
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $patch_file_path:expr, $build_manifest_event_id:expr) => {{
+        let patch_content = include_str!($patch_file_path);
+        $crate::publish_patch_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            patch_content,
+            Some($build_manifest_event_id),
         ).await;
     }};
 }
@@ -448,6 +475,7 @@ pub async fn publish_repository_announcement_event(
     clone_url: &str,
     euc: &str, // Earliest Unique Commit hash
     d_tag_value: &str, // d-tag value
+    build_manifest_event_id: Option<&EventId>,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
@@ -458,18 +486,22 @@ pub async fn publish_repository_announcement_event(
     }
     client.connect().await;
 
-    let mut event_builder = EventBuilder::new(
-        Kind::Custom(30617), // NIP-34 Repository Announcement kind
-        "", // Content is empty for repository announcement
-    );
-
-    event_builder = event_builder.tags(vec![
+    let mut tags = vec![
         Tag::parse(["name", project_name]).expect("Failed to create name tag"),
         Tag::parse(["description", description]).expect("Failed to create description tag"),
         Tag::parse(["clone", clone_url]).expect("Failed to create clone tag"),
         Tag::custom("euc".into(), vec![euc.to_string()]),
         Tag::custom("d".into(), vec![d_tag_value.to_string()]), // NIP-33 d-tag
-    ]);
+    ];
+
+    if let Some(event_id) = build_manifest_event_id {
+        tags.push(Tag::event(*event_id));
+    }
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(30617), // NIP-34 Repository Announcement kind
+        "", // Content is empty for repository announcement
+    ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
@@ -488,6 +520,7 @@ pub async fn publish_patch_event(
     d_tag_value: &str,
     commit_id: &str,
     patch_content: &str,
+    build_manifest_event_id: Option<&EventId>,
 ) {
     let client = nostr_sdk::Client::new(keys.clone());
 
@@ -498,13 +531,19 @@ pub async fn publish_patch_event(
     }
     client.connect().await;
 
+    let mut tags = vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
+    ];
+
+    if let Some(event_id) = build_manifest_event_id {
+        tags.push(Tag::event(*event_id));
+    }
+
     let event_builder = EventBuilder::new(
         Kind::Custom(1617), // NIP-34 Patch kind
         patch_content,
-    ).tags(vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
-        Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
-    ]);
+    ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
@@ -823,13 +862,18 @@ mod tests {
             "test_repository_announcement_event_metadata",
         ).await;
 
+        use nostr_sdk::EventId;
+        use std::str::FromStr;
+        let dummy_build_manifest_id = EventId::from_str("f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0").unwrap();
+
         repository_announcement!(
             &keys,
             &relay_urls,
             project_name,
             description,
             clone_url,
-            "../Cargo.toml" // Pass the string literal directly, correcting path for include_bytes!
+            "../Cargo.toml", // Pass the string literal directly, correcting path for include_bytes!
+            &dummy_build_manifest_id
         );    }
 
     #[cfg(feature = "nostr")]
