@@ -67,7 +67,7 @@ async fn publish_nostr_event_if_release(
             // Print failed relays and remove "unfriendly" relays from the list
             let mut relays_to_remove: Vec<String> = Vec::new();
             for (relay_url, error_msg) in event_output.failed.iter() {
-                println!("cargo:warning=Failed to publish to relay {}: {}", relay_url, error_msg);
+                //println!("cargo:warning=Failed to publish to relay {}: {}", relay_url, error_msg);
                 if should_remove_relay(error_msg) {
                     relays_to_remove.push(relay_url.to_string());
                 }
