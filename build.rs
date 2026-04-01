@@ -155,6 +155,10 @@ async fn main() {
     println!("cargo:rerun-if-changed=Cargo.toml");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=build.rs");
+    let online_relays_csv_path = PathBuf::from(&manifest_dir).join("src/get_file_hash_core/src/online_relays_gps.csv");
+    if online_relays_csv_path.exists() {
+        println!("cargo:rerun-if-changed={}", online_relays_csv_path.to_str().unwrap());
+    }
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
     if cfg!(not(debug_assertions)) {
