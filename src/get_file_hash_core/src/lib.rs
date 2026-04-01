@@ -342,6 +342,52 @@ macro_rules! publish_repository_state {
     }};
 }
 
+/// Publishes a NIP-34 issue event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, the repository's d-tag value,
+/// a unique issue ID, the issue's title, and its content (markdown).
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::publish_issue;
+/// use nostr_sdk::Keys;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let d_tag = "my-awesome-repo";
+///     let issue_id = "123";
+///     let title = "Bug: Fix authentication flow";
+///     let content = "The authentication flow is currently broken when users try to log in with invalid credentials. It crashes instead of showing an error message.";
+///
+///     publish_issue!(
+///         &keys,
+///         &relay_urls,
+///         d_tag,
+///         issue_id,
+///         title,
+///         content
+///     );
+/// }
+/// ```
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! publish_issue {
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $issue_id:expr, $title:expr, $content:expr) => {{
+        $crate::publish_issue_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $issue_id,
+            $title,
+            $content,
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
@@ -587,6 +633,43 @@ pub async fn publish_repository_state_event(
     }
 }
 
+#[cfg(feature = "nostr")]
+pub async fn publish_issue_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    d_tag_value: &str,
+    issue_id: &str, // Unique identifier for the issue
+    title: &str,
+    content: &str,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for issue {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1621), // NIP-34 Issue kind
+        content,
+    ).tags(vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["i", issue_id]).expect("Failed to create issue ID tag"),
+        Tag::parse(["title", title]).expect("Failed to create title tag"),
+    ]);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 Issue event for issue {} ({}). Event ID (raw): {:?}, Event ID (bech32): {}", issue_id, title, event_id, event_id.to_bech32().unwrap());
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 Issue event for issue {} ({}): {}", issue_id, title, e);
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -732,6 +815,14 @@ mod tests {
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_repo_announcement_picture.jpg",
+            "https://example.com/test_repo_announcement_banner.jpg",
+            "test_repository_announcement_event_metadata",
+        ).await;
+
         repository_announcement!(
             &keys,
             &relay_urls,
@@ -739,8 +830,7 @@ mod tests {
             description,
             clone_url,
             "../Cargo.toml" // Pass the string literal directly, correcting path for include_bytes!
-        );
-    }
+        );    }
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
@@ -755,14 +845,21 @@ mod tests {
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_patch_picture.jpg",
+            "https://example.com/test_patch_banner.jpg",
+            "test_publish_patch_event_metadata",
+        ).await;
+
         publish_patch!(
             &keys,
             &relay_urls,
             d_tag,
             commit_id,
             "lib.rs" // Use an existing file for the patch content
-        );
-    }
+        );    }
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
@@ -777,6 +874,14 @@ mod tests {
         let clone_url = "git@example.com:test/pr-branch.git";
         let title = Some("Feat: Implement NIP-34 PR");
 
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_pr_picture.jpg",
+            "https://example.com/test_pr_banner.jpg",
+            "test_publish_pull_request_event_metadata",
+        ).await;
+
         // Test with a title
         publish_pull_request!(
             &keys,
@@ -786,7 +891,6 @@ mod tests {
             clone_url,
             title.unwrap()
         );
-
         // Test without a title
         publish_pull_request!(
             &keys,
@@ -813,6 +917,14 @@ mod tests {
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_pr_update_picture.jpg",
+            "https://example.com/test_pr_update_banner.jpg",
+            "test_publish_pr_update_event_metadata",
+        ).await;
+
         publish_pr_update!(
             &keys,
             &relay_urls,
@@ -820,8 +932,7 @@ mod tests {
             &pr_event_id, // Pass a reference to pr_event_id
             updated_commit_id,
             updated_clone_url
-        );
-    }
+        );    }
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
@@ -837,12 +948,51 @@ mod tests {
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_repo_state_picture.jpg",
+            "https://example.com/test_repo_state_banner.jpg",
+            "test_publish_repository_state_event_metadata",
+        ).await;
+
         publish_repository_state!(
             &keys,
             &relay_urls,
             d_tag,
             branch_name,
             commit_id
-        );
-    }
+        );    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_publish_issue_event() {
+        use super::get_relay_urls;
+        use nostr_sdk::Keys;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let d_tag = "test-repo-for-issue";
+        let issue_id = "456";
+        let title = "Feature: Implement NIP-34 Issues";
+        let content = "This is a test issue to verify the NIP-34 issue macro implementation.";
+
+        // This test primarily checks that the macro and function compile and execute without panicking.
+        // Actual publishing success depends on external network conditions.
+        super::publish_metadata_event(
+            &keys,
+            &relay_urls,
+            "https://example.com/test_issue_picture.jpg",
+            "https://example.com/test_issue_banner.jpg",
+            "test_publish_issue_event_metadata",
+        ).await;
+
+        publish_issue!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            issue_id,
+            title,
+            content
+        );    }
 }
