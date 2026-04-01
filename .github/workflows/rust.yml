@@ -28,3 +28,5 @@ jobs:
       run: cargo test ${{ matrix.features_args }}
     - name: Run get_file_hash_core tests ${{ matrix.features_args }}
       run: cargo test -p get_file_hash_core ${{ matrix.features_args }}
+    - name: Build Release ${{ matrix.features_args }}
+      run: cargo build --release ${{ matrix.features_args }}
