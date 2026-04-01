@@ -3,7 +3,7 @@ members = [".", "src/get_file_hash_core"]
 
 [package]
 name = "get_file_hash"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
 description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
 license = "MIT"
@@ -17,14 +17,14 @@ nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 
 [dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.1", features = ["nostr"] }
+get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.2", features = ["nostr"] }
 sha2 = "0.11.0"
 nostr = { version = "0.44.2", optional = true }
 nostr-sdk = { version = "0.44.0", optional = true }
 hex = { version = "0.4.2", optional = true }
 tokio = { version = "1", features = ["full"] }
 [build-dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.1", features = ["nostr"] }
+get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.2", features = ["nostr"] }
 sha2 = "0.11.0"
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
