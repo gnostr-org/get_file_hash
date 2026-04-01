@@ -153,6 +153,49 @@ macro_rules! repository_announcement {
     }};
 }
 
+/// Publishes a NIP-34 patch event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, the repository's d-tag value,
+/// the commit ID the patch applies to, and the path to the patch file.
+/// The content of the patch file is included directly in the event.
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::publish_patch;
+/// use nostr_sdk::Keys;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let d_tag = "my-awesome-repo";
+///     let commit_id = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"; // Example commit ID
+///
+///     publish_patch!(
+///         &keys,
+///         &relay_urls,
+///         d_tag,
+///         commit_id,
+///         "lib.rs" // Use an existing file for the patch content
+///     );
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! publish_patch {
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $patch_file_path:expr) => {{
+        let patch_content = include_str!($patch_file_path);
+        $crate::publish_patch_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            patch_content,
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
@@ -242,6 +285,41 @@ pub async fn publish_repository_announcement_event(
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Repository Announcement for {}: {}", project_name, e);
+        }
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_patch_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    d_tag_value: &str,
+    commit_id: &str,
+    patch_content: &str,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for patch {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(1617), // NIP-34 Patch kind
+        patch_content,
+    ).tags(vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
+    ]);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 Patch event for commit {}: {:?}", commit_id, event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
         }
     }
 }
@@ -397,6 +475,28 @@ mod tests {
             description,
             clone_url,
             "../Cargo.toml" // Pass the string literal directly, correcting path for include_bytes!
+        );
+    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_publish_patch_event() {
+        use super::{publish_patch, get_relay_urls};
+        use nostr_sdk::Keys;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let d_tag = "test-repo-for-patch";
+        let commit_id = "fedcba9876543210fedcba9876543210fedcba";
+
+        // This test primarily checks that the macro and function compile and execute without panicking.
+        // Actual publishing success depends on external network conditions.
+        publish_patch!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            commit_id,
+            "lib.rs" // Use an existing file for the patch content
         );
     }
 }
