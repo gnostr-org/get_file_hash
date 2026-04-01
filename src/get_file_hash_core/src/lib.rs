@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::path::PathBuf;
 #[cfg(feature = "nostr")]
-use nostr_sdk::prelude::*;
+use nostr_sdk::prelude::{*, EventBuilder, Tag, Kind};
 #[cfg(feature = "nostr")]
 use serde_json::json;
 #[cfg(feature = "nostr")]
@@ -102,6 +102,57 @@ macro_rules! file_hash_as_nostr_private_key {
     }};
 }
 
+/// Publishes a NIP-34 repository announcement event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, project details, a clone URL, and a file path.
+/// It computes the SHA-256 hash of the file at compile time to use as the "earliest unique commit" (EUC),
+/// and then publishes a Kind 30617 event.
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::repository_announcement;
+/// use get_file_hash_core::get_file_hash;
+/// use nostr_sdk::Keys;
+/// use sha2::{Digest, Sha256};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let project_name = "my-awesome-repo";
+///     let description = "A fantastic new project.";
+///     let clone_url = "git@github.com:user/my-awesome-repo.git";
+///
+///     repository_announcement!(
+///         &keys,
+///         &relay_urls,
+///         project_name,
+///         description,
+///         clone_url,
+///         "../Cargo.toml" // Use a known file in your project
+///     );
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! repository_announcement {
+    ($keys:expr, $relay_urls:expr, $project_name:expr, $description:expr, $clone_url:expr, $file_for_euc:expr) => {{
+        let euc_hash = $crate::get_file_hash!($file_for_euc);
+        // The 'd' tag value should be unique for the repository. Using the project_name for simplicity.
+        let d_tag_value = $project_name;
+        $crate::publish_repository_announcement_event(
+            $keys,
+            $relay_urls,
+            $project_name,
+            $description,
+            $clone_url,
+            &euc_hash,
+            d_tag_value,
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
@@ -149,6 +200,48 @@ pub async fn publish_metadata_event(
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);
+        }
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_repository_announcement_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    project_name: &str,
+    description: &str,
+    clone_url: &str,
+    euc: &str, // Earliest Unique Commit hash
+    d_tag_value: &str, // d-tag value
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for repository announcement {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let mut event_builder = EventBuilder::new(
+        Kind::Custom(30617), // NIP-34 Repository Announcement kind
+        "", // Content is empty for repository announcement
+    );
+
+    event_builder = event_builder.tags(vec![
+        Tag::parse(["name", project_name]).expect("Failed to create name tag"),
+        Tag::parse(["description", description]).expect("Failed to create description tag"),
+        Tag::parse(["clone", clone_url]).expect("Failed to create clone tag"),
+        Tag::custom("euc".into(), vec![euc.to_string()]),
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // NIP-33 d-tag
+    ]);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 Repository Announcement for {}: {:?}", project_name, event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 Repository Announcement for {}: {}", project_name, e);
         }
     }
 }
@@ -280,5 +373,30 @@ mod tests {
             banner_url,
             file_path_str,
         ).await;
+    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_repository_announcement_event() {
+        use super::{repository_announcement, get_relay_urls};
+        use nostr_sdk::Keys;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let project_name = "test-nip34-repo";
+        let description = "A test repository for NIP-34 announcements.";
+        let clone_url = "git@example.com:test/test-nip34-repo.git";
+        let file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
+
+        // This test primarily checks that the macro and function compile and execute without panicking.
+        // Actual publishing success depends on external network conditions.
+        repository_announcement!(
+            &keys,
+            &relay_urls,
+            project_name,
+            description,
+            clone_url,
+            "../Cargo.toml" // Pass the string literal directly, correcting path for include_bytes!
+        );
     }
 }
