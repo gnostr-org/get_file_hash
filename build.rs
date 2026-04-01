@@ -132,6 +132,7 @@ async fn main() {
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
     if cfg!(not(debug_assertions)) {
+        println!("cargo:warning=Nostr feature enabled: Build may take longer due to network operations (publishing events to relays).");
 
         // This code only runs in release builds
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
