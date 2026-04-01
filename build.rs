@@ -78,7 +78,7 @@ async fn publish_nostr_event_if_release(
                 println!("cargo:warning=Removed {} unresponsive relays from the list.", relays_to_remove.len());
             }
 
-            let filename = format!("{}/{}/{}.json", hash, public_key.clone(), event_output.val.to_string());
+            let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
             let file_path = output_dir.join(&filename);
             if let Some(parent) = file_path.parent() {
                 if let Err(e) = fs::create_dir_all(parent) {
