@@ -275,6 +275,29 @@ macro_rules! publish_pull_request {
             $commit_id,
             $clone_url,
             Some($title),
+            None, // Pass None for build_manifest_event_id
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $build_manifest_event_id:expr) => {{
+        $crate::publish_pull_request_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            $clone_url,
+            None,
+            Some($build_manifest_event_id),
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $title:expr, $build_manifest_event_id:expr) => {{
+        $crate::publish_pull_request_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $commit_id,
+            $clone_url,
+            Some($title),
+            Some($build_manifest_event_id),
         ).await;
     }};
 }
@@ -323,6 +346,18 @@ macro_rules! publish_pr_update {
             $pr_event_id,
             $updated_commit_id,
             $updated_clone_url,
+            None, // Pass None for build_manifest_event_id
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $pr_event_id:expr, $updated_commit_id:expr, $updated_clone_url:expr, $build_manifest_event_id:expr) => {{
+        $crate::publish_pr_update_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $pr_event_id,
+            $updated_commit_id,
+            $updated_clone_url,
+            Some($build_manifest_event_id),
         ).await;
     }};
 }
@@ -411,6 +446,18 @@ macro_rules! publish_issue {
             $issue_id,
             $title,
             $content,
+            None, // Pass None for build_manifest_event_id
+        ).await;
+    }};
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $issue_id:expr, $title:expr, $content:expr, $build_manifest_event_id:expr) => {{
+        $crate::publish_issue_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $issue_id,
+            $title,
+            $content,
+            Some($build_manifest_event_id),
         ).await;
     }};
 }
