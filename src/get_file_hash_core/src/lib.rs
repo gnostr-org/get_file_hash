@@ -300,6 +300,48 @@ macro_rules! publish_pr_update {
     }};
 }
 
+/// Publishes a NIP-34 repository state event to Nostr relays.
+///
+/// This macro takes Nostr keys, relay URLs, the repository's d-tag value,
+/// the branch name, and the commit ID for that branch.
+///
+/// # Examples
+///
+/// ```no_run
+/// use get_file_hash_core::publish_repository_state;
+/// use nostr_sdk::Keys;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let keys = Keys::generate();
+///     let relay_urls = vec!["wss://relay.damus.io".to_string()];
+///     let d_tag = "my-awesome-repo";
+///     let branch_name = "main";
+///     let commit_id = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0";
+///
+///     publish_repository_state!(
+///         &keys,
+///         &relay_urls,
+///         d_tag,
+///         branch_name,
+///         commit_id
+///     );
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+#[macro_export]
+macro_rules! publish_repository_state {
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $branch_name:expr, $commit_id:expr) => {{
+        $crate::publish_repository_state_event(
+            $keys,
+            $relay_urls,
+            $d_tag_value,
+            $branch_name,
+            $commit_id,
+        ).await;
+    }};
+}
+
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
     String::from_utf8_lossy(
         &Command::new("git")
@@ -505,6 +547,42 @@ pub async fn publish_pr_update_event(
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 PR Update event for PR {}: {}", pr_event_id.to_string(), e);
+        }
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_repository_state_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    d_tag_value: &str,
+    branch_name: &str,
+    commit_id: &str,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay for repository state {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let event_builder = EventBuilder::new(
+        Kind::Custom(30618), // NIP-34 Repository State kind
+        "", // Content is empty for repository state
+    ).tags(vec![
+        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::parse(["name", branch_name]).expect("Failed to create branch name tag"),
+        Tag::parse(["commit", commit_id]).expect("Failed to create commit ID tag"),
+    ]);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_id) => {
+            println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}): {:?}", branch_name, commit_id, event_id);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to publish NIP-34 Repository State event for branch {} (commit {}): {}", branch_name, commit_id, e);
         }
     }
 }
@@ -742,6 +820,29 @@ mod tests {
             &pr_event_id, // Pass a reference to pr_event_id
             updated_commit_id,
             updated_clone_url
+        );
+    }
+
+    #[cfg(feature = "nostr")]
+    #[tokio::test]
+    async fn test_publish_repository_state_event() {
+        use super::get_relay_urls;
+        use nostr_sdk::Keys;
+
+        let keys = Keys::generate();
+        let relay_urls = get_relay_urls();
+        let d_tag = "test-repo-for-state";
+        let branch_name = "main";
+        let commit_id = "abcde12345abcde12345abcde12345abcde12345";
+
+        // This test primarily checks that the macro and function compile and execute without panicking.
+        // Actual publishing success depends on external network conditions.
+        publish_repository_state!(
+            &keys,
+            &relay_urls,
+            d_tag,
+            branch_name,
+            commit_id
         );
     }
 }
