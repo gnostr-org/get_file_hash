@@ -28,7 +28,7 @@ fn should_remove_relay(error_msg: &str) -> bool {
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
-        hash: String,
+    hash: String,
     keys: Keys,
     event_builder: EventBuilder,
     relay_urls: &mut Vec<String>,
