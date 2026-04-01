@@ -1,5 +1,6 @@
 #[tokio::main]
 #[cfg(feature = "nostr")]
+#[allow(unused_imports)]
 async fn main() {
     use get_file_hash_core::repository_announcement;
     use get_file_hash_core::get_file_hash;
