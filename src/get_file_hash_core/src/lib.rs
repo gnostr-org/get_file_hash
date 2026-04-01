@@ -787,10 +787,13 @@ mod tests {
     use tempfile;
     use super::get_git_tracked_files;
     use std::process::Command;
+    #[cfg(feature = "nostr")]
     use nostr_sdk::EventId;
+    #[cfg(feature = "nostr")]
     use std::str::FromStr;
 
     // Dummy EventId for tests that require a build_manifest_event_id
+    #[cfg(feature = "nostr")]
     const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
 
 
@@ -926,7 +929,7 @@ mod tests {
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
         let clone_url = "git@example.com:test/test-nip34-repo.git";
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         let _file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
 
         // This test primarily checks that the macro and function compile and execute without panicking.
@@ -1073,7 +1076,7 @@ mod tests {
         let commit_id = "abcde12345abcde12345abcde12345abcde12345";
         use nostr_sdk::EventId;
         use std::str::FromStr;
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
