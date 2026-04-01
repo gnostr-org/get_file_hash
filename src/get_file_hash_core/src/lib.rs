@@ -427,7 +427,7 @@ pub async fn publish_repository_announcement_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Repository Announcement for {}: {:?}", project_name, event_id);
+            println!("cargo:warning=Published NIP-34 Repository Announcement for {}. Event ID: {}", project_name, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Repository Announcement for {}: {}", project_name, e);
@@ -462,7 +462,7 @@ pub async fn publish_patch_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Patch event for commit {}: {:?}", commit_id, event_id);
+            println!("cargo:warning=Published NIP-34 Patch event for commit {}. Event ID: {}", commit_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
@@ -505,7 +505,7 @@ pub async fn publish_pull_request_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Pull Request event for commit {}: {:?}", commit_id, event_id);
+            println!("cargo:warning=Published NIP-34 Pull Request event for commit {}. Event ID: {}", commit_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Pull Request event for commit {}: {}", commit_id, e);
@@ -543,7 +543,7 @@ pub async fn publish_pr_update_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 PR Update event for PR {}: {:?}", pr_event_id.to_string(), event_id);
+            println!("cargo:warning=Published NIP-34 PR Update event for PR {}. Event ID: {}", pr_event_id.to_bech32().unwrap(), event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 PR Update event for PR {}: {}", pr_event_id.to_string(), e);
@@ -579,7 +579,7 @@ pub async fn publish_repository_state_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}): {:?}", branch_name, commit_id, event_id);
+            println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}). Event ID: {}", branch_name, commit_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Repository State event for branch {} (commit {}): {}", branch_name, commit_id, e);
