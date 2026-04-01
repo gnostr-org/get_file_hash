@@ -108,9 +108,6 @@ async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
-    #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    let mut relay_urls = get_file_hash_core::get_relay_urls();
-
     if !is_git_repo {
         println!("cargo:rustc-cfg=is_published_source");
     } else {
