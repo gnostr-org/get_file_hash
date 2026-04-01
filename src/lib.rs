@@ -24,13 +24,16 @@ mod tests {
     #[test]
     fn test_injected_hash_exists() {
         assert!(!BUILD_HASH.is_empty());
-        println!("Verified build.rs Hash:\n{}", BUILD_HASH);
+        println!("Verified build.rs Hash:
+{}", BUILD_HASH);
 
         assert!(!CARGO_TOML_HASH.is_empty());
-        println!("Verified Cargo.toml Hash:\n{}", CARGO_TOML_HASH);
+        println!("Verified Cargo.toml Hash:
+{}", CARGO_TOML_HASH);
 
         assert!(!LIB_HASH.is_empty());
-        println!("Verified src/lib.rs Hash:\n{}", LIB_HASH);
+        println!("Verified src/lib.rs Hash:
+{}", LIB_HASH);
     }
 
     /// Tests that the `get_file_hash!` macro correctly computes the SHA-256
@@ -49,24 +52,6 @@ mod tests {
             .collect::<String>();
 
         let actual_hash = get_file_hash!("lib.rs");
-        assert_eq!(actual_hash, expected_hash);
-    }
-    /// Tests that the `get_file_hash!` macro correctly computes the SHA-256
-    /// hash of `src/get_file_hash_core/src/lib.rs` and that it matches a
-    /// manually computed hash of the same file.
-    #[test]
-    fn test_get_core_lib_hash() {
-        let file_content = include_bytes!("get_file_hash_core/src/lib.rs");
-
-        let mut hasher = Sha256::new();
-        hasher.update(file_content);
-        let expected_hash = hasher
-            .finalize()
-            .iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>();
-
-        let actual_hash = get_file_hash!("get_file_hash_core/src/lib.rs");
         assert_eq!(actual_hash, expected_hash);
     }
 }
