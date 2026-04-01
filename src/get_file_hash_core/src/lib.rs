@@ -130,7 +130,8 @@ macro_rules! file_hash_as_nostr_private_key {
 ///         project_name,
 ///         description,
 ///         clone_url,
-///         "../Cargo.toml" // Use a known file in your project
+///         "../Cargo.toml", // Use a known file in your project
+///         None
 ///     );
 /// }
 #[cfg(feature = "nostr")]
@@ -162,7 +163,7 @@ macro_rules! repository_announcement {
             $clone_url,
             &euc_hash,
             d_tag_value,
-            Some($build_manifest_event_id),
+            $build_manifest_event_id, // Pass directly, macro arg should be Option<&EventId>
         ).await;
     }};
 }
@@ -217,7 +218,7 @@ macro_rules! publish_patch {
             $d_tag_value,
             $commit_id,
             patch_content,
-            Some($build_manifest_event_id),
+            $build_manifest_event_id, // Pass directly, macro arg should be Option<&EventId>
         ).await;
     }};
 }
@@ -848,7 +849,8 @@ mod tests {
     #[tokio::test]
     async fn test_repository_announcement_event() {
         use super::get_relay_urls;
-        use nostr_sdk::Keys;
+        use nostr_sdk::{Keys, EventId};
+        use std::str::FromStr;
 
         let keys = Keys::generate();
         let relay_urls = get_relay_urls();
@@ -867,7 +869,6 @@ mod tests {
             "test_repository_announcement_event_metadata",
         ).await;
 
-
         let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         repository_announcement!(
@@ -877,8 +878,9 @@ mod tests {
             description,
             clone_url,
             "../Cargo.toml", // Pass the string literal directly, correcting path for include_bytes!
-            &dummy_build_manifest_id
-        );    }
+            Some(&dummy_build_manifest_id)
+        );
+    }
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
@@ -901,12 +903,14 @@ mod tests {
             "test_publish_patch_event_metadata",
         ).await;
 
+        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         publish_patch!(
             &keys,
             &relay_urls,
             d_tag,
             commit_id,
-            "lib.rs" // Use an existing file for the patch content
+            "lib.rs", // Use an existing file for the patch content
+            Some(&dummy_build_manifest_id)
         );    }
 
     #[cfg(feature = "nostr")]
