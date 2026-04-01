@@ -48,6 +48,7 @@ async fn main() {
         d_tag,
         commit_id,
         clone_url,
+        None, // Explicitly pass None for title
         Some(&dummy_build_manifest_id)
     );
     println!("Pull request with build_manifest_event_id but without title published.");

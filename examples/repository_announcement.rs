@@ -4,6 +4,7 @@ async fn main() {
     use get_file_hash_core::repository_announcement;
     use get_file_hash_core::get_file_hash;
     use nostr_sdk::Keys;
+    use sha2::{Digest, Sha256};
     use nostr_sdk::EventId;
     use std::str::FromStr;
 

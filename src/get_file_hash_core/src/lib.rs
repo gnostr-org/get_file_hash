@@ -258,48 +258,42 @@ macro_rules! publish_patch {
 #[cfg(feature = "nostr")]
 #[macro_export]
 macro_rules! publish_pull_request {
+    // 5 args: No title, no build_manifest_event_id
     ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr) => {{
         $crate::publish_pull_request_event(
-            $keys,
-            $relay_urls,
-            $d_tag_value,
-            $commit_id,
-            $clone_url,
-            None, // Pass None for build_manifest_event_id
-            None,
+            $keys, $relay_urls, $d_tag_value, $commit_id, $clone_url,
+            None, // title: Option<&str>
+            None, // build_manifest_event_id: Option<&EventId>
         ).await;
     }};
+
+    // 6 args: With title (Option<&str>), no build_manifest_event_id
     ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $title:expr) => {{
         $crate::publish_pull_request_event(
-            $keys,
-            $relay_urls,
-            $d_tag_value,
-            $commit_id,
-            $clone_url,
-            Some($title),
-            None, // Pass None for build_manifest_event_id
+            $keys, $relay_urls, $d_tag_value, $commit_id, $clone_url,
+            $title, // title: Option<&str>
+            None, // build_manifest_event_id: Option<&EventId>
         ).await;
     }};
-    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $build_manifest_event_id:expr) => {{
-        $crate::publish_pull_request_event(
-            $keys,
-            $relay_urls,
-            $d_tag_value,
-            $commit_id,
-            $clone_url,
-            None,
-            Some($build_manifest_event_id),
-        ).await;
-    }};
+
+    // 7 args: With title (Option<&str>), with build_manifest_event_id (Option<&EventId>)
+    // This needs to be before the 6-arg arm that passes a single Option for build_manifest_event_id if it's not None.
     ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, $title:expr, $build_manifest_event_id:expr) => {{
         $crate::publish_pull_request_event(
-            $keys,
-            $relay_urls,
-            $d_tag_value,
-            $commit_id,
-            $clone_url,
-            $title,
-            $build_manifest_event_id,
+            $keys, $relay_urls, $d_tag_value, $commit_id, $clone_url,
+            $title, // title: Option<&str>
+            $build_manifest_event_id, // build_manifest_event_id: Option<&EventId>
+        ).await;
+    }};
+
+    // 6 args: No title, with build_manifest_event_id (Option<&EventId>)
+    // This must be after the 7-arg arm to avoid ambiguity.
+    // The example needs to explicitly pass None for title.
+    ($keys:expr, $relay_urls:expr, $d_tag_value:expr, $commit_id:expr, $clone_url:expr, _none_title:tt, $build_manifest_event_id:expr) => {{ // _none_title as tt to match None
+        $crate::publish_pull_request_event(
+            $keys, $relay_urls, $d_tag_value, $commit_id, $clone_url,
+            None, // title: Option<&str>
+            $build_manifest_event_id, // build_manifest_event_id: Option<&EventId>
         ).await;
     }};
 }
@@ -460,7 +454,7 @@ macro_rules! publish_issue {
             $issue_id,
             $title,
             $content,
-            Some($build_manifest_event_id),
+            $build_manifest_event_id, // Pass Option<&EventId> directly
         ).await;
     }};
 }
@@ -1135,7 +1129,7 @@ mod tests {
             issue_id,
             title,
             content,
-            &dummy_build_manifest_id
+            Some(&dummy_build_manifest_id)
         );
     }
 }
