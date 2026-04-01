@@ -556,7 +556,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     #[tokio::test]
     async fn test_repository_announcement_event() {
-        use super::{repository_announcement, get_relay_urls};
+        use super::get_relay_urls;
         use nostr_sdk::Keys;
 
         let keys = Keys::generate();
@@ -564,7 +564,7 @@ mod tests {
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
         let clone_url = "git@example.com:test/test-nip34-repo.git";
-        let file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
+        let _file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -581,7 +581,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     #[tokio::test]
     async fn test_publish_patch_event() {
-        use super::{publish_patch, get_relay_urls};
+        use super::get_relay_urls;
         use nostr_sdk::Keys;
 
         let keys = Keys::generate();
@@ -603,7 +603,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     #[tokio::test]
     async fn test_publish_pull_request_event() {
-        use super::{publish_pull_request, get_relay_urls};
+        use super::get_relay_urls;
         use nostr_sdk::Keys;
 
         let keys = Keys::generate();
