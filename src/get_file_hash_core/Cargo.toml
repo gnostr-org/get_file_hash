@@ -1,6 +1,6 @@
 [package]
 name = "get_file_hash_core"
-version = "0.1.2"
+version.workspace = true
 edition = "2024"
 description = "A procedural macro to compute the SHA-256 hash of a file at compile time."
 license = "MIT"

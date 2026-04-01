@@ -1,30 +1,38 @@
 [workspace]
 members = [".", "src/get_file_hash_core"]
 
-[package]
-name = "get_file_hash"
+[workspace.package]
 version = "0.1.9"
 edition = "2024"
-description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
 license = "MIT"
 documentation = "https://github.com/gnostr-org/get_file_hash#readme"
 homepage = "https://github.com/gnostr-org/get_file_hash"
 repository = "https://github.com/gnostr-org/get_file_hash"
+
+[package]
+name = "get_file_hash"
+version.workspace = true
+edition.workspace = true
+description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
 
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 
 [dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.2", features = ["nostr"] }
+get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.9", features = ["nostr"] }
 sha2 = "0.11.0"
 nostr = { version = "0.44.2", optional = true }
 nostr-sdk = { version = "0.44.0", optional = true }
 hex = { version = "0.4.2", optional = true }
 tokio = { version = "1", features = ["full"] }
-[build-dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.2", features = ["nostr"] }
+
+[workspace.dependencies]
+get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.9" }
 sha2 = "0.11.0"
+[build-dependencies]
+get_file_hash_core = { workspace = true, features = ["nostr"] }
+sha2 = { workspace = true }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
 nostr = "0.44.2"
