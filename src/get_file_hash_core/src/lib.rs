@@ -24,6 +24,8 @@ use rand::thread_rng;
 #[cfg(feature = "nostr")]
 pub use frost_secp256k1_tr as frost_bip340;
 
+pub mod frost_mailbox_logic;
+
 //#[cfg(feature = "nostr")]
 //use std::collections::BTreeMap;
 
