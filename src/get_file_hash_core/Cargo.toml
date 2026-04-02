@@ -1,12 +1,13 @@
 [package]
 name = "get_file_hash_core"
 version.workspace = true
-edition = "2024"
-description = "A procedural macro to compute the SHA-256 hash of a file at compile time."
-license = "MIT"
-documentation = "https://github.com/gnostr-org/get_file_hash#readme"
-homepage = "https://github.com/gnostr-org/get_file_hash"
-repository = "https://github.com/gnostr-org/get_file_hash"
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
 
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url"]
