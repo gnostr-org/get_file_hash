@@ -1454,8 +1454,18 @@ mod tests {
     async fn test_publish_repository_state_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
+        use nostr_sdk::secp256k1::SecretKey as NostrSecretKey;
+        use crate::frost_bip340::Identifier as FrostBip340Identifier;
 
-        let keys = Keys::generate();
+        // 1. Generate FROST keys (1-of-1 for this test to derive a single Nostr key)
+        let (shares, _pubkey_package) = super::generate_frost_keys(1, 1).unwrap();
+        let signer_id = FrostBip340Identifier::try_from(1 as u16).unwrap();
+        let secret_share = shares.get(&signer_id).unwrap();
+
+        // Convert FROST secret share's scalar to a Nostr SecretKey
+        let frost_secp_secret_key = secret_share.scalar();
+        let nostr_secret_key = NostrSecretKey::from_bytes(frost_secp_secret_key.as_ref()).unwrap();
+        let keys = Keys::new_unencrypted(nostr_secret_key);
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-state";
         let branch_name = "main";
