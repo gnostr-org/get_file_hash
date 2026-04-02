@@ -855,6 +855,9 @@ mod tests {
     use sha2::{Digest, Sha256};
     use tempfile;
     use super::get_git_tracked_files;
+    use super::frost;
+    use super::frost_bip340;
+    use frost_bip340::Identifier;
     use std::process::Command;
     #[cfg(feature = "nostr")]
     use nostr_sdk::EventId;
