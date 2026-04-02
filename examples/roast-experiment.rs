@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 /// A simplified ROAST Coordinator that manages signing sessions
 struct RoastCoordinator {
     min_signers: u16,
-    message: Vec<u8>,
+    _message: Vec<u8>,
     commitments: BTreeMap<frost::Identifier, frost::round1::SigningCommitments>,
     nonces: BTreeMap<frost::Identifier, frost::round1::SigningNonces>,
     shares: BTreeMap<frost::Identifier, frost::round2::SignatureShare>,
@@ -15,7 +15,7 @@ impl RoastCoordinator {
     fn new(min_signers: u16, message: &[u8]) -> Self {
         Self {
             min_signers,
-            message: message.to_vec(),
+            _message: message.to_vec(),
             commitments: BTreeMap::new(),
             nonces: BTreeMap::new(),
             shares: BTreeMap::new(),
