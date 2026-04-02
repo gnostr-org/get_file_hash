@@ -863,6 +863,7 @@ mod tests {
     use sha2::{Digest, Sha256};
     use tempfile;
     use super::get_git_tracked_files;
+    #[cfg(feature = "nostr")]
     use super::frost;
         use std::process::Command;
     #[cfg(feature = "nostr")]
