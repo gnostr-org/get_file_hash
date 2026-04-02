@@ -85,3 +85,13 @@ To interact with the `build.rs` script's features, especially those related to N
     cargo test --workspace --release --features nostr
     ```
 
+*   **Build `get_file_hash_core` in release mode with Nostr feature (very verbose output):**
+    ```bash
+    cargo build --release --features nostr -vv -p get_file_hash_core
+    ```
+
+*   **Run `get_file_hash_core` tests in release mode with Nostr feature (very verbose output):**
+    ```bash
+    cargo test --release --features nostr -vv -p get_file_hash_core
+    ```
+
