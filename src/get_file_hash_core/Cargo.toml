@@ -34,6 +34,8 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 csv = { workspace = true }
 url = { workspace = true }
 frost-secp256k1-tr = { workspace = true }
+serial_test = { workspace = true, features = ["test_logging"] }
+log = { workspace = true }
 
 [build-dependencies]
 reqwest = { workspace = true, features = ["json"], optional = true }

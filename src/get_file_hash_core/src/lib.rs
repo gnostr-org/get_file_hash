@@ -854,6 +854,9 @@ pub fn generate_frost_keys(
     }
 #[cfg(test)]
 mod tests {
+	use serial_test::serial;
+    use log::{info, debug, error};
+
 	use std::collections::BTreeMap;
     use std::fs::File;
     use std::io::Write;
@@ -998,6 +1001,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
+    #[serial]
     async fn test_repository_announcement_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::{Keys, EventId};
@@ -1306,6 +1310,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
+    #[serial]
     async fn test_repository_announcement_event() {
         use super::get_relay_urls;
         use nostr_sdk::{Keys, EventId};
@@ -1452,6 +1457,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
+    #[serial]
     async fn test_publish_repository_state_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
