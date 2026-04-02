@@ -10,15 +10,15 @@ use csv::ReaderBuilder;
 #[cfg(feature = "nostr")]
 use ::url::Url;
 #[cfg(feature = "nostr")]
-pub use frost_secp256k1 as frost;
+pub use frost_secp256k1_tr as frost;
 #[cfg(feature = "nostr")]
-use frost_secp256k1::keys::{KeyPackage, PublicKeyPackage, SecretShare};
+use frost::keys::{KeyPackage, PublicKeyPackage, SecretShare};
 #[cfg(feature = "nostr")]
-use frost_secp256k1::round1::{SigningCommitments, SigningNonces};
+use frost::round1::{SigningCommitments, SigningNonces};
 #[cfg(feature = "nostr")]
-use frost_secp256k1::round2::SignatureShare;
+use frost::round2::SignatureShare;
 #[cfg(feature = "nostr")]
-use frost_secp256k1::SigningPackage;
+use frost::SigningPackage;
 #[cfg(feature = "nostr")]
 use rand::thread_rng;
 #[cfg(feature = "nostr")]
@@ -840,15 +840,15 @@ pub fn generate_frost_keys(
     signing_package: &SigningPackage,
     signature_shares: &BTreeMap<frost::Identifier, SignatureShare>,
     pubkey_package: &PublicKeyPackage,
-    ) -> Result<frost_secp256k1::Signature, Box<dyn std::error::Error>> {
+    ) -> Result<frost_secp256k1_tr::Signature, Box<dyn std::error::Error>> {
     Ok(frost::aggregate(signing_package, signature_shares, pubkey_package)?)
     }
 
     #[cfg(feature = "nostr")]
     pub fn verify_frost_signature(
-    group_public_key: &frost_secp256k1::VerifyingKey,
+    group_public_key: &frost_secp256k1_tr::VerifyingKey,
     message: &[u8],
-    signature: &frost_secp256k1::Signature,
+    signature: &frost_secp256k1_tr::Signature,
     ) -> Result<(), Box<dyn std::error::Error>> {
     Ok(group_public_key.verify(message, signature)?)
     }
@@ -860,8 +860,8 @@ mod tests {
     use sha2::{Digest, Sha256};
     use tempfile;
     use super::get_git_tracked_files;
-    use crate::frost::{self, Identifier as FrostIdentifier};
-    use crate::frost_bip340::{self, Identifier as FrostBip340Identifier};
+    use crate::frost::{self};
+    use crate::frost_bip340::{self};
     use std::process::Command;
     #[cfg(feature = "nostr")]
     use nostr_sdk::EventId;
@@ -1460,14 +1460,14 @@ mod tests {
         use crate::frost_bip340::Identifier as FrostBip340Identifier;
 
         // 1. Generate FROST keys (1-of-1 for this test to derive a single Nostr key)
-        let (shares, _pubkey_package) = super::generate_frost_keys(1, 1).unwrap();
+        let (shares, _pubkey_package) = super::generate_frost_keys(2, 2).unwrap();
         let signer_id = FrostBip340Identifier::try_from(1 as u16).unwrap();
         let secret_share = shares.get(&signer_id).unwrap();
 
         // Convert FROST secret share's scalar to a Nostr SecretKey
-        let frost_secp_secret_key = secret_share.scalar();
-        let nostr_secret_key = NostrSecretKey::from_bytes(frost_secp_secret_key.as_ref()).unwrap();
-        let keys = Keys::new_unencrypted(nostr_secret_key);
+        let frost_secp_secret_key = secret_share.signing_share().to_scalar();
+        let nostr_secret_key = NostrSecretKey::from_slice(&frost_secp_secret_key.to_bytes()).unwrap();
+        let keys = Keys::new(nostr_secret_key.into());
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-state";
         let branch_name = "main";

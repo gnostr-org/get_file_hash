@@ -41,7 +41,6 @@ csv = { version = "1.3.0", default-features = false }
 url = "2.5.0"
 reqwest = { version = "0.12.0", default-features = false }
 tempfile = "3.27.0"
-frost-secp256k1 = "1.0.0-rc.0" # Or current stable version
 rand = "0.8"
 frost-secp256k1-tr = "3.0.0-rc.0"
 
@@ -52,7 +51,6 @@ nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["full"] }
-frost-secp256k1 = { workspace = true }
 frost-secp256k1-tr = { workspace = true }
 rand = { workspace = true }
 serde_json.workspace = true

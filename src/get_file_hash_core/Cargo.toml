@@ -10,8 +10,7 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
-frost = ["dep:frost-secp256k1"]
-nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "frost", "dep:rand"]
+nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "dep:rand"]
 
 [dependencies]
 sha2 = { workspace = true, optional = true }
@@ -21,7 +20,6 @@ nostr-sdk = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
-frost-secp256k1 = { workspace = true, optional = true }
 frost-secp256k1-tr = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 
@@ -35,7 +33,6 @@ hex = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 csv = { workspace = true }
 url = { workspace = true }
-frost-secp256k1 = { workspace = true }
 frost-secp256k1-tr = { workspace = true }
 
 [build-dependencies]
