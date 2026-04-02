@@ -8,6 +8,20 @@ use serde_json::json;
 use csv::ReaderBuilder;
 #[cfg(feature = "nostr")]
 use ::url::Url;
+#[cfg(feature = "nostr")]
+use frost_secp256k1 as frost;
+#[cfg(feature = "nostr")]
+use frost_secp256k1::keys::{KeyPackage, PublicKeyPackage, SecretShare};
+#[cfg(feature = "nostr")]
+use frost_secp256k1::round1::{SigningCommitments, SigningNonces};
+#[cfg(feature = "nostr")]
+use frost_secp256k1::round2::SignatureShare;
+#[cfg(feature = "nostr")]
+use frost_secp256k1::SigningPackage;
+#[cfg(feature = "nostr")]
+use rand::thread_rng;
+#[cfg(feature = "nostr")]
+use std::collections::BTreeMap;
 
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
@@ -772,7 +786,63 @@ pub async fn publish_issue_event(
     }
 }
 
+#[cfg(feature = "nostr")]
+pub fn generate_frost_keys(
+    max_signers: u16,
+    min_signers: u16,
+) -> Result<(BTreeMap<frost::Identifier, SecretShare>, PublicKeyPackage), Box<dyn std::error::Error>> {                let mut rng = thread_rng();
+    let (shares, pubkey_package) = frost::keys::generate_with_dealer(
+        max_signers,
+        min_signers,
+        frost::keys::IdentifierList::Default,
+        &mut rng,
+    )?;
+    Ok((shares, pubkey_package))
+    }
 
+    #[cfg(feature = "nostr")]
+    pub fn create_frost_commitment(
+    secret_share: &SecretShare,
+    ) -> (SigningNonces, SigningCommitments) {
+    let mut rng = thread_rng();
+    frost::round1::commit(secret_share.signing_share(), &mut rng)
+    }
+
+    #[cfg(feature = "nostr")]
+    pub fn create_signing_package(
+    commitments: BTreeMap<frost::Identifier, SigningCommitments>,
+    message: &[u8],
+    ) -> SigningPackage {
+    frost::SigningPackage::new(commitments, message)
+    }
+
+    #[cfg(feature = "nostr")]
+    pub fn generate_signature_share(
+    signing_package: &SigningPackage,
+    nonces: &SigningNonces,
+    secret_share: &SecretShare,
+    ) -> Result<SignatureShare, Box<dyn std::error::Error>> {
+    let key_package: KeyPackage = secret_share.clone().try_into()?;
+    Ok(frost::round2::sign(signing_package, nonces, &key_package)?)
+    }
+
+    #[cfg(feature = "nostr")]
+    pub fn aggregate_signature_shares(
+    signing_package: &SigningPackage,
+    signature_shares: &BTreeMap<frost::Identifier, SignatureShare>,
+    pubkey_package: &PublicKeyPackage,
+    ) -> Result<frost_secp256k1::Signature, Box<dyn std::error::Error>> {
+    Ok(frost::aggregate(signing_package, signature_shares, pubkey_package)?)
+    }
+
+    #[cfg(feature = "nostr")]
+    pub fn verify_frost_signature(
+    group_public_key: &frost_secp256k1::VerifyingKey,
+    message: &[u8],
+    signature: &frost_secp256k1::Signature,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+    Ok(group_public_key.verify(message, signature)?)
+    }
 #[cfg(test)]
 mod tests {
     use std::fs::File;
