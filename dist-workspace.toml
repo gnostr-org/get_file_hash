@@ -12,7 +12,7 @@ ci = "github"
 # The installers to generate for each app
 installers = ["shell", "powershell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
-tap = "gnostr-org/homebrew-gnostr-org"
+tap = "gnostr-org/homebrew-gnostr"
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Publish jobs to run in CI

@@ -336,7 +336,7 @@ jobs:
             git add "Formula/${filename}"
             git commit -m "${name} ${version}"
           done
-          git push
+          git push origin HEAD
           cargo build --release --features nostr
 
   announce:
