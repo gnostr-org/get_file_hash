@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::path::PathBuf;
 #[cfg(feature = "nostr")]
@@ -26,8 +25,8 @@ pub use frost_secp256k1_tr as frost_bip340;
 
 pub mod frost_mailbox_logic;
 
-//#[cfg(feature = "nostr")]
-//use std::collections::BTreeMap;
+#[cfg(feature = "nostr")]
+use std::collections::BTreeMap;
 
 //#[cfg(feature = "nostr")]
 pub const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
@@ -867,7 +866,6 @@ pub fn generate_frost_keys(
 #[cfg(test)]
 mod tests {
 	use serial_test::serial;
-    use log::{info, debug, error};
 
 	use std::collections::BTreeMap;
     use std::fs::File;
