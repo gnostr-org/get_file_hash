@@ -39,7 +39,6 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
-  pull_request:
   push:
     tags:
       - "**[0-9]+.[0-9]+.[0-9]+*"
@@ -60,10 +59,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install sccache
-        run: |
-          cargo install sccache --version 0.4.0 --locked
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      #- name: Install sccache
+      #  run: |
+      #    cargo install sccache --version 0.4.0 --locked
+      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -124,10 +123,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install sccache
-        run: |
-          cargo install sccache --version 0.4.0 --locked
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      #- name: Install sccache
+      #  run: |
+      #    cargo install sccache --version 0.4.0 --locked
+      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |
@@ -186,10 +185,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install sccache
-        run: |
-          cargo install sccache --version 0.4.0 --locked
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      #- name: Install sccache
+      #  run: |
+      #    cargo install sccache --version 0.4.0 --locked
+      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
@@ -240,10 +239,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install sccache
-        run: |
-          cargo install sccache --version 0.4.0 --locked
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      #- name: Install sccache
+      #  run: |
+      #    cargo install sccache --version 0.4.0 --locked
+      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
@@ -338,6 +337,7 @@ jobs:
             git commit -m "${name} ${version}"
           done
           git push
+          cargo build --release --features nostr
 
   announce:
     needs:
