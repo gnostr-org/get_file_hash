@@ -225,33 +225,10 @@ async fn main() {
 
         // This code only runs in release builds
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
-        let git_commit_hash = std::env::var("GIT_COMMIT_HASH").unwrap_or_default();
-        let git_branch = std::env::var("GIT_BRANCH").unwrap_or_default();
-        let repo_url = std::env::var("CARGO_PKG_REPOSITORY").unwrap();
-        let repo_name = std::env::var("CARGO_PKG_NAME").unwrap();
-        let repo_description = std::env::var("CARGO_PKG_DESCRIPTION").unwrap();
 
         let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
         if let Err(e) = fs::create_dir_all(&output_dir) {
             println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
-        }
-
-        let announcement_keys = Keys::generate(); // Use new keys for the announcement event
-        let announcement_pubkey_hex = announcement_keys.public_key().to_string();
-
-        // Publish NIP-34 Repository Announcement
-        if let Some(_event_id) = get_repo_announcement_event(
-            &announcement_keys,
-            &relay_urls,
-            &repo_url,
-            &repo_name,
-            &repo_description,
-            &git_commit_hash,
-            &git_branch,
-            &output_dir,
-            &announcement_pubkey_hex
-        ).await {
-            // Successfully published announcement
         }
 
         let files_to_publish: Vec<String> = get_git_tracked_files(&PathBuf::from(&manifest_dir));
