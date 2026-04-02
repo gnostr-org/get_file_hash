@@ -25,14 +25,26 @@ jobs:
     - name: Build ${{ matrix.features_args }}
       run: cargo build --workspace --verbose ${{ matrix.features_args }}
     - name: Run workspace tests ${{ matrix.features_args }}
-      run: cargo test --workspace ${{ matrix.features_args }}
+      run: |
+        ulimit -n 4096
+        cargo test --workspace ${{ matrix.features_args }} -- --test-threads 1
     - name: Run get_file_hash_core tests ${{ matrix.features_args }}
       shell: bash
       run: |
+        ulimit -n 4096
         if [[ "${{ matrix.features_args }}" == "--features nostr" ]]; then
           cargo test -p get_file_hash_core ${{ matrix.features_args }} -- --test-threads 1 --nocapture
         else
-          cargo test -p get_file_hash_core ${{ matrix.features_args }}
+          cargo test -p get_file_hash_core ${{ matrix.features_args }} -- --test-threads 1
+        fi
+    - name: Run get_file_hash tests ${{ matrix.features_args }}
+      shell: bash
+      run: |
+        ulimit -n 4096
+        if [[ "${{ matrix.features_args }}" == "--features nostr" ]]; then
+          cargo test -p get_file_hash ${{ matrix.features_args }} -- --test-threads 1 --nocapture
+        else
+          cargo test -p get_file_hash ${{ matrix.features_args }} -- --test-threads 1
         fi
     - name: Build Release ${{ matrix.features_args }}
       run: cargo build --workspace --release ${{ matrix.features_args }}

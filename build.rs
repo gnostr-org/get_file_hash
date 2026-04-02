@@ -4,7 +4,7 @@ use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::get_git_tracked_files;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil};
+use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
@@ -27,12 +27,35 @@ fn should_remove_relay(error_msg: &str) -> bool {
 }
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
+fn write_event_json_to_file(
+    output_dir: &PathBuf,
+    filename: &str,
+    event: &Event,
+) -> Option<()> {
+    let file_path = output_dir.join(filename);
+    if let Some(parent) = file_path.parent() {
+        if let Err(e) = fs::create_dir_all(parent) {
+            println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
+            return None;
+        }
+    }
+    if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
+        println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+        None
+    } else {
+        println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
+        Some(())
+    }
+}
+
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
     mut relay_urls: Vec<String>,
     file_path_str: &str,
+    output_dir: &PathBuf,
 ) -> Option<EventId> {
     let client = nostr_sdk::Client::new(keys.clone());
         let public_key = keys.public_key().to_string();
@@ -48,13 +71,6 @@ async fn publish_nostr_event_if_release(
     client.connect().await;
     println!("cargo:warning=Connected to {} relays", relay_urls.len());
 
-    let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
-    let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
-    if let Err(e) = fs::create_dir_all(&output_dir) {
-        println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
-        return None;
-    }
-
     let event = client.sign_event_builder(event_builder).await.unwrap();
 
     match client.send_event(&event).await {        Ok(event_output) => {
@@ -67,7 +83,6 @@ async fn publish_nostr_event_if_release(
             // Print failed relays and remove "unfriendly" relays from the list
             let mut relays_to_remove: Vec<String> = Vec::new();
             for (relay_url, error_msg) in event_output.failed.iter() {
-                //println!("cargo:warning=Failed to publish to relay {}: {}", relay_url, error_msg);
                 if should_remove_relay(error_msg) {
                     relays_to_remove.push(relay_url.to_string());
                 }
@@ -79,29 +94,18 @@ async fn publish_nostr_event_if_release(
             }
 
             let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
-            let file_path = output_dir.join(&filename);
-            if let Some(parent) = file_path.parent() {
-                if let Err(e) = fs::create_dir_all(parent) {
-                    println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
-                    return None;
-                }
-            }
-            if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
-                println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
-            } else {
-                println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
-            }
+            write_event_json_to_file(output_dir, &filename, &event);
             Some(event_output.val)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
             None
         },
-    None
-    },
+    }
+}
 
-    #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    pub async fn get_repo_announcement_event(
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
+pub async fn get_repo_announcement_event(
     keys: &Keys,
     relay_urls: &Vec<String>,
     repo_url: &str,
@@ -109,7 +113,9 @@ async fn publish_nostr_event_if_release(
     repo_description: &str,
     git_commit_hash: &str,
     git_branch: &str,
-    ) -> Option<EventId> {
+    output_dir: &PathBuf,
+    public_key_hex: &str,
+) -> Option<EventId> {
     let client = nostr_sdk::Client::new(keys.clone());
 
     for relay_url in relay_urls {
@@ -127,11 +133,15 @@ async fn publish_nostr_event_if_release(
         Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
     ];
 
-    let event_builder = EventBuilder::new(Kind::RepositoryAnnouncement, repo_description, tags);
+    let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
+    let event = client.sign_event_builder(event_builder).await.unwrap();
 
-    match client.send_event_builder(event_builder).await {
+    match client.send_event(&event).await {
         Ok(event_output) => {
             println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            write_event_json_to_file(output_dir, &filename, &event);
             Some(event_output.val)
         },
         Err(e) => {
@@ -139,10 +149,10 @@ async fn publish_nostr_event_if_release(
             None
         },
     }
-    }
+}
 
-    #[tokio::main]
-    async fn main() {
+#[tokio::main]
+async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
@@ -190,7 +200,7 @@ async fn publish_nostr_event_if_release(
     println!("cargo:rerun-if-changed=.git/HEAD");
 
     #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    let mut relay_urls = get_file_hash_core::get_relay_urls();
+    let relay_urls = get_file_hash_core::get_relay_urls();
 
     let cargo_toml_hash = get_file_hash!("Cargo.toml");
     println!("cargo:rustc-env=CARGO_TOML_HASH={}", cargo_toml_hash);
@@ -221,7 +231,13 @@ async fn publish_nostr_event_if_release(
         let repo_name = std::env::var("CARGO_PKG_NAME").unwrap();
         let repo_description = std::env::var("CARGO_PKG_DESCRIPTION").unwrap();
 
+        let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
+        if let Err(e) = fs::create_dir_all(&output_dir) {
+            println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
+        }
+
         let announcement_keys = Keys::generate(); // Use new keys for the announcement event
+        let announcement_pubkey_hex = announcement_keys.public_key().to_string();
 
         // Publish NIP-34 Repository Announcement
         if let Some(_event_id) = get_repo_announcement_event(
@@ -232,6 +248,8 @@ async fn publish_nostr_event_if_release(
             &repo_description,
             &git_commit_hash,
             &git_branch,
+            &output_dir,
+            &announcement_pubkey_hex
         ).await {
             // Successfully published announcement
         }
@@ -259,7 +277,7 @@ async fn publish_nostr_event_if_release(
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_urls.clone(), file_path_str).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_urls.clone(), file_path_str, &output_dir).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
@@ -302,6 +320,7 @@ async fn publish_nostr_event_if_release(
                 event_builder,
                 relay_urls.clone(),
                 "build_manifest.json",
+                &output_dir,
             ).await;
 
             // Publish metadata event for the build manifest

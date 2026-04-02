@@ -483,17 +483,29 @@ macro_rules! publish_issue {
 }
 
 pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
-    String::from_utf8_lossy(
-        &Command::new("git")
-            .arg("ls-files")
-            .current_dir(dir)
-            .output()
-            .expect("Failed to execute git ls-files")
-            .stdout
-    )
-    .lines()
-    .filter_map(|line| Some(String::from(line)))
-    .collect()
+    match Command::new("git")
+        .arg("ls-files")
+        .current_dir(dir)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .output()
+    {
+        Ok(output) if output.status.success() && !output.stdout.is_empty() => {
+            String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .filter_map(|line| Some(String::from(line)))
+                .collect()
+        }
+        Ok(output) => {
+            println!("cargo:warning=git ls-files failed or returned empty. Status: {:?}, Stderr: {}", 
+                     output.status, String::from_utf8_lossy(&output.stderr));
+            Vec::new()
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to execute git ls-files: {}", e);
+            Vec::new()
+        }
+    }
 }
 
 #[cfg(feature = "nostr")]

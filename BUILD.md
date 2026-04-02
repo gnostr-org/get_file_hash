@@ -54,6 +54,11 @@ This helper function determines if a relay should be considered "unfriendly" or 
 
 ## Usage
 
+To prevent 'Too many open files' errors, especially during builds and tests involving numerous file operations or subprocesses (like `git ls-files` or parallel test execution), it may be necessary to increase the file descriptor limit.
+
+*   **For local development**: Run `ulimit -n 4096` in your terminal session before executing `cargo build` or `cargo test`. This setting is session-specific.
+*   **For CI environments**: The `.github/workflows/rust.yml` workflow is configured to set `ulimit -n 4096` for relevant test steps to ensure consistent execution.
+
 The values set by `build.rs` can be accessed in your Rust code (e.g., `src/lib.rs`) at compile time using the `env!` macro. For example:
 ```rust
 pub const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
