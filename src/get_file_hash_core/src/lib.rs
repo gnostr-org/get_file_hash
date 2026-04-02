@@ -968,7 +968,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_metadata_event() {
+    async fn test_publish_metadata_event_tr() {
         use super::publish_metadata_event;
         use nostr_sdk::Keys;
 
@@ -992,7 +992,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_repository_announcement_event() {
+    async fn test_repository_announcement_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
@@ -1030,7 +1030,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_patch_event() {
+    async fn test_publish_patch_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
@@ -1061,7 +1061,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_pull_request_event() {
+    async fn test_publish_pull_request_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
@@ -1103,7 +1103,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_pr_update_event() {
+    async fn test_publish_pr_update_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
@@ -1174,7 +1174,7 @@ mod tests {
 
     // Test for get_file_hash! macro
     #[test]
-    fn test_get_file_hash() {
+    fn test_get_file_hash_tr() {
         let dir = tempfile::tempdir().unwrap();
         let file_path = dir.path().join("test_file.txt");
         let content = "Hello, world!";
@@ -1210,7 +1210,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_git_tracked_files() {
+    fn test_get_git_tracked_files_tr() {
         let dir = tempfile::tempdir().unwrap();
         let repo_path = dir.path();
 
@@ -1446,7 +1446,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_repository_state_event() {
+    async fn test_publish_repository_state_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
@@ -1479,7 +1479,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[tokio::test]
-    async fn test_publish_issue_event() {
+    async fn test_publish_issue_event_tr() {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
         use nostr_sdk::EventId;
@@ -1516,7 +1516,7 @@ mod tests {
 
     #[cfg(feature = "nostr")]
     #[test]
-    fn test_frost_signature_flow() {
+    fn test_frost_signature_flow_tr() {
         let max_signers = 3;
         let min_signers = 2;
         let message = b"This is a test message for FROST signing";
