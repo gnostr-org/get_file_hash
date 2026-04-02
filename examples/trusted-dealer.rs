@@ -1,5 +1,5 @@
 #[cfg(feature = "nostr")]
-use frost_secp256k1 as frost;
+use frost_secp256k1_tr as frost;
 #[cfg(feature = "nostr")]
 use rand::thread_rng;
 #[cfg(feature = "nostr")]

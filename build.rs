@@ -110,21 +110,40 @@ async fn main() {
     println!("cargo:rustc-env=CARGO_PKG_VERSION={}", env!("CARGO_PKG_VERSION"));
 
     if is_git_repo {
-        let git_commit_hash = std::process::Command::new("git")
+        let git_commit_hash_output = std::process::Command::new("git")
             .args(&["rev-parse", "HEAD"])
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
             .output()
-            .expect("Failed to execute git command for commit hash")
-            .stdout;
-        let git_commit_hash_str = String::from_utf8(git_commit_hash).unwrap();
-        println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str.trim());
+            .expect("Failed to execute git command for commit hash");
 
-        let git_branch = std::process::Command::new("git")
+        let git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
+            String::from_utf8(git_commit_hash_output.stdout).unwrap().trim().to_string()
+        } else {
+            println!("cargo:warning=Git commit hash command failed or returned empty. Status: {:?}, Stderr: {}", 
+                     git_commit_hash_output.status, String::from_utf8_lossy(&git_commit_hash_output.stderr));
+            String::new()
+        };
+        println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
+
+        let git_branch_output = std::process::Command::new("git")
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
             .output()
-            .expect("Failed to execute git command for branch name")
-            .stdout;
-        let git_branch_str = String::from_utf8(git_branch).unwrap();
-        println!("cargo:rustc-env=GIT_BRANCH={}", git_branch_str.trim());
+            .expect("Failed to execute git command for branch name");
+
+        let git_branch_str = if git_branch_output.status.success() && !git_branch_output.stdout.is_empty() {
+            String::from_utf8(git_branch_output.stdout).unwrap().trim().to_string()
+        } else {
+            println!("cargo:warning=Git branch command failed or returned empty. Status: {:?}, Stderr: {}", 
+                     git_branch_output.status, String::from_utf8_lossy(&git_branch_output.stderr));
+            String::new()
+        };
+        println!("cargo:rustc-env=GIT_BRANCH={}", git_branch_str);
+    } else {
+        println!("cargo:rustc-env=GIT_COMMIT_HASH=");
+        println!("cargo:rustc-env=GIT_BRANCH=");
     }
 
     println!("cargo:rerun-if-changed=.git/HEAD");
@@ -186,7 +205,7 @@ async fn main() {
                             // Publish metadata event
                             get_file_hash_core::publish_metadata_event(
                                 &keys,
-                                &mut relay_urls,
+                                &relay_urls,
                                 "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
                                 "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
                                 file_path_str,
@@ -227,7 +246,7 @@ async fn main() {
             // Publish metadata event for the build manifest
             get_file_hash_core::publish_metadata_event(
                 &cloned_keys, // Use reference to cloned keys here
-                &mut relay_urls,
+                &relay_urls,
                 "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
                 "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
                 &format!("build_manifest:{}", package_version),

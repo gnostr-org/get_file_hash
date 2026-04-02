@@ -860,9 +860,8 @@ mod tests {
     use sha2::{Digest, Sha256};
     use tempfile;
     use super::get_git_tracked_files;
-    use crate::frost::{self};
-    use crate::frost_bip340::{self};
-    use std::process::Command;
+    use super::frost;
+        use std::process::Command;
     #[cfg(feature = "nostr")]
     use nostr_sdk::EventId;
     #[cfg(feature = "nostr")]
@@ -1457,11 +1456,10 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
         use nostr_sdk::secp256k1::SecretKey as NostrSecretKey;
-        use crate::frost_bip340::Identifier as FrostBip340Identifier;
-
+        
         // 1. Generate FROST keys (1-of-1 for this test to derive a single Nostr key)
         let (shares, _pubkey_package) = super::generate_frost_keys(2, 2).unwrap();
-        let signer_id = FrostBip340Identifier::try_from(1 as u16).unwrap();
+        let signer_id = frost::Identifier::try_from(1 as u16).unwrap();
         let secret_share = shares.get(&signer_id).unwrap();
 
         // Convert FROST secret share's scalar to a Nostr SecretKey
