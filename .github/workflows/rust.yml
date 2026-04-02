@@ -25,8 +25,9 @@ jobs:
     - name: Build ${{ matrix.features_args }}
       run: cargo build --workspace --verbose ${{ matrix.features_args }}
     - name: Run workspace tests ${{ matrix.features_args }}
-      run: cargo test --workspace --verbose ${{ matrix.features_args }}
+      run: cargo test --workspace ${{ matrix.features_args }}
     - name: Run get_file_hash_core tests ${{ matrix.features_args }}
+      shell: bash
       run: |
         if [[ "${{ matrix.features_args }}" == "--features nostr" ]]; then
           cargo test -p get_file_hash_core ${{ matrix.features_args }} -- --test-threads 1 --nocapture
