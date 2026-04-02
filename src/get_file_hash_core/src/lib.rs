@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::path::PathBuf;
 #[cfg(feature = "nostr")]
@@ -20,8 +21,11 @@ use frost_secp256k1::round2::SignatureShare;
 use frost_secp256k1::SigningPackage;
 #[cfg(feature = "nostr")]
 use rand::thread_rng;
-#[cfg(feature = "nostr")]
-use std::collections::BTreeMap;
+//#[cfg(feature = "nostr")]
+//use std::collections::BTreeMap;
+
+//#[cfg(feature = "nostr")]
+pub const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
 
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
@@ -845,6 +849,7 @@ pub fn generate_frost_keys(
     }
 #[cfg(test)]
 mod tests {
+	use std::collections::BTreeMap;
     use std::fs::File;
     use std::io::Write;
     use sha2::{Digest, Sha256};
@@ -856,9 +861,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     use std::str::FromStr;
 
-    // Dummy EventId for tests that require a build_manifest_event_id
-    #[cfg(feature = "nostr")]
-    const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
+
 
 
     // Test for get_file_hash! macro
@@ -999,7 +1002,7 @@ mod tests {
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
         let clone_url = "git@example.com:test/test-nip34-repo.git";
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let _dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         let _file_for_euc = "Cargo.toml"; // Use a known file in the project, as required by include_bytes!
 
         // This test primarily checks that the macro and function compile and execute without panicking.
@@ -1012,7 +1015,7 @@ mod tests {
             "test_repository_announcement_event_metadata",
         ).await;
 
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         repository_announcement!(
             &keys,
@@ -1046,7 +1049,7 @@ mod tests {
             "test_publish_patch_event_metadata",
         ).await;
 
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         publish_patch!(
             &keys,
             &relay_urls,
@@ -1068,7 +1071,7 @@ mod tests {
         let commit_id = "0123456789abcdef0123456789abcdef01234567";
         let clone_url = "git@example.com:test/pr-branch.git";
         let title = Some("Feat: Implement NIP-34 PR");
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         super::publish_metadata_event(
             &keys,
@@ -1111,7 +1114,7 @@ mod tests {
         let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
         let updated_commit_id = "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0";
         let updated_clone_url = "git@example.com:test/pr-branch-updated.git";
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1146,7 +1149,7 @@ mod tests {
         let commit_id = "abcde12345abcde12345abcde12345abcde12345";
         use nostr_sdk::EventId;
         use std::str::FromStr;
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let _dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1166,9 +1169,7 @@ mod tests {
             commit_id
         );    }
 
-    // Dummy EventId for tests that require a build_manifest_event_id
-    #[cfg(feature = "nostr")]
-    const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
+
 
 
     // Test for get_file_hash! macro
@@ -1309,7 +1310,7 @@ mod tests {
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
         let clone_url = "git@example.com:test/test-nip34-repo.git";
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let _dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         let _file_for_euc = "Cargo.toml"; // Use a known file in your project, as required by include_bytes!
 
         // This test primarily checks that the macro and function compile and execute without panicking.
@@ -1322,7 +1323,7 @@ mod tests {
             "test_repository_announcement_event_metadata",
         ).await;
 
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         repository_announcement!(
             &keys,
@@ -1356,7 +1357,7 @@ mod tests {
             "test_publish_patch_event_metadata",
         ).await;
 
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
         publish_patch!(
             &keys,
             &relay_urls,
@@ -1378,7 +1379,7 @@ mod tests {
         let commit_id = "0123456789abcdef0123456789abcdef01234567";
         let clone_url = "git@example.com:test/pr-branch.git";
         let title = Some("Feat: Implement NIP-34 PR");
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         super::publish_metadata_event(
             &keys,
@@ -1421,7 +1422,7 @@ mod tests {
         let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
         let updated_commit_id = "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0";
         let updated_clone_url = "git@example.com:test/pr-branch-updated.git";
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1456,7 +1457,7 @@ mod tests {
         let commit_id = "abcde12345abcde12345abcde12345abcde12345";
         use nostr_sdk::EventId;
         use std::str::FromStr;
-        let _dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let _dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1490,7 +1491,7 @@ mod tests {
         let issue_id = "456";
         let title = "Feature: Implement NIP-34 Issues";
         let content = "This is a test issue to verify the NIP-34 issue macro implementation.";
-        let dummy_build_manifest_id = EventId::from_str(DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
+        let dummy_build_manifest_id = EventId::from_str(super::DUMMY_BUILD_MANIFEST_ID_STR).unwrap();
 
         // This test primarily checks that the macro and function compile and execute without panicking.
         // Actual publishing success depends on external network conditions.
@@ -1534,7 +1535,7 @@ mod tests {
         nonces_map.insert(signer1_id, nonces1);
 
         let signer2_id = frost::Identifier::try_from(2 as u16).unwrap();
-        let (nonces2, comms2) = super::create_frost_commitment(&shares[&signer2]);
+        let (nonces2, comms2) = super::create_frost_commitment(&shares[&signer2_id]);
         commitments.insert(signer2_id, comms2);
         nonces_map.insert(signer2_id, nonces2);
 
