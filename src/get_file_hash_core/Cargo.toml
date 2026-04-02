@@ -10,7 +10,8 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
-nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1", "dep:frost-secp256k1-tr"]
+frost = ["dep:frost-secp256k1"]
+nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "frost"]
 
 [dependencies]
 sha2 = { workspace = true, optional = true }

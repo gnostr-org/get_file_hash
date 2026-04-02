@@ -10,7 +10,7 @@ use csv::ReaderBuilder;
 #[cfg(feature = "nostr")]
 use ::url::Url;
 #[cfg(feature = "nostr")]
-use frost_secp256k1 as frost;
+pub use frost_secp256k1 as frost;
 #[cfg(feature = "nostr")]
 use frost_secp256k1::keys::{KeyPackage, PublicKeyPackage, SecretShare};
 #[cfg(feature = "nostr")]
