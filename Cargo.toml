@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.1.9"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 documentation = "https://github.com/gnostr-org/get_file_hash#readme"
@@ -19,7 +19,7 @@ description = "A utility crate providing a procedural macro to compute and embed
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.1.9" }
+get_file_hash_core = { path = "src/get_file_hash_core", version = "0.2.0" }
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"

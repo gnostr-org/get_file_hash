@@ -31,7 +31,7 @@ async fn publish_nostr_event_if_release(
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    relay_urls: &mut Vec<String>,
+    mut relay_urls: Vec<String>,
     file_path_str: &str,
 ) -> Option<EventId> {
     let client = nostr_sdk::Client::new(keys.clone());
@@ -179,7 +179,7 @@ async fn main() {
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_urls.clone(), file_path_str).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
@@ -206,6 +206,7 @@ async fn main() {
         // Create and publish the linking event
         if !published_event_ids.is_empty() {
             let keys = Keys::generate(); // Generate new keys for the linking event
+            let cloned_keys = keys.clone();
             let content = format!("Build manifest for get_file_hash v{}", package_version);
             let mut tags = vec![
                 Tag::parse(["build_manifest", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
@@ -217,10 +218,19 @@ async fn main() {
             // Use a dummy hash and file_path_str for the linking event, as it's not tied to a single file
             publish_nostr_event_if_release(
                 hex::encode(Sha256::digest(content.as_bytes())),
-                keys,
+                keys, // `keys` is moved here
                 event_builder,
-                &mut relay_urls,
+                relay_urls.clone(),
                 "build_manifest.json",
+            ).await;
+
+            // Publish metadata event for the build manifest
+            get_file_hash_core::publish_metadata_event(
+                &cloned_keys, // Use reference to cloned keys here
+                &mut relay_urls,
+                "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
+                "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
+                &format!("build_manifest:{}", package_version),
             ).await;
         }
     }
