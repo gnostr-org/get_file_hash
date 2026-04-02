@@ -97,11 +97,52 @@ async fn publish_nostr_event_if_release(
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
             None
         },
-    }
-}
+    None
+    },
 
-#[tokio::main]
-async fn main() {
+    #[cfg(all(not(debug_assertions), feature = "nostr"))]
+    pub async fn get_repo_announcement_event(
+    keys: &Keys,
+    relay_urls: &Vec<String>,
+    repo_url: &str,
+    repo_name: &str,
+    repo_description: &str,
+    git_commit_hash: &str,
+    git_branch: &str,
+    ) -> Option<EventId> {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let tags = vec![
+        Tag::parse(["r", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["name", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+    ];
+
+    let event_builder = EventBuilder::new(Kind::RepositoryAnnouncement, repo_description, tags);
+
+    match client.send_event_builder(event_builder).await {
+        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            Some(event_output.val)
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            None
+        },
+    }
+    }
+
+    #[tokio::main]
+    async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
@@ -174,6 +215,26 @@ async fn main() {
 
         // This code only runs in release builds
         let package_version = std::env::var("CARGO_PKG_VERSION").unwrap();
+        let git_commit_hash = std::env::var("GIT_COMMIT_HASH").unwrap_or_default();
+        let git_branch = std::env::var("GIT_BRANCH").unwrap_or_default();
+        let repo_url = std::env::var("CARGO_PKG_REPOSITORY").unwrap();
+        let repo_name = std::env::var("CARGO_PKG_NAME").unwrap();
+        let repo_description = std::env::var("CARGO_PKG_DESCRIPTION").unwrap();
+
+        let announcement_keys = Keys::generate(); // Use new keys for the announcement event
+
+        // Publish NIP-34 Repository Announcement
+        if let Some(_event_id) = get_repo_announcement_event(
+            &announcement_keys,
+            &relay_urls,
+            &repo_url,
+            &repo_name,
+            &repo_description,
+            &git_commit_hash,
+            &git_branch,
+        ).await {
+            // Successfully published announcement
+        }
 
         let files_to_publish: Vec<String> = get_git_tracked_files(&PathBuf::from(&manifest_dir));
         

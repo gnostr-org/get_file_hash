@@ -60,3 +60,23 @@ pub const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 ```
 
 The Nostr event publishing functionality of `build.rs` is primarily for release builds with the `nostr` feature enabled, allowing for the automatic, deterministic publication of project state to the Nostr network as part of the CI/CD pipeline.
+
+## Example Commands
+
+To interact with the `build.rs` script's features, especially those related to Nostr event publishing, you can use the following `cargo` commands:
+
+*   **Build in release mode with Nostr feature (verbose output):**
+    ```bash
+    cargo build --release --workspace --features nostr -vv
+    ```
+
+*   **Run tests for `get_file_hash_core` sequentially with Nostr feature and verbose logging (as in CI):**
+    ```bash
+    RUST_LOG=info,nostr_sdk=debug,frost=debug cargo test -p get_file_hash_core --features nostr -- --test-threads 1 --nocapture
+    ```
+
+*   **Run all workspace tests in release mode with Nostr feature:**
+    ```bash
+    cargo test --workspace --release --features nostr
+    ```
+
