@@ -1,7 +1,11 @@
+#[cfg(feature = "nostr")]
 use frost_secp256k1 as frost;
+#[cfg(feature = "nostr")]
 use rand::thread_rng;
+#[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
+#[cfg(feature = "nostr")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = thread_rng();
     let max_signers = 3;
@@ -78,4 +82,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     println!("Threshold signature verified successfully!");
     Ok(())
+}
+
+#[cfg(not(feature = "nostr"))]
+fn main() {
+    println!("This example requires the 'nostr' feature. Please run with: cargo run --example trusted-dealer --features nostr");
 }

@@ -1,8 +1,12 @@
+#[cfg(feature = "nostr")]
 use frost_secp256k1 as frost;
+#[cfg(feature = "nostr")]
 use rand::thread_rng;
+#[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
 /// A simplified ROAST Coordinator that manages signing sessions
+#[cfg(feature = "nostr")]
 struct RoastCoordinator {
     min_signers: u16,
     _message: Vec<u8>,
@@ -11,6 +15,7 @@ struct RoastCoordinator {
     shares: BTreeMap<frost::Identifier, frost::round2::SignatureShare>,
 }
 
+#[cfg(feature = "nostr")]
 impl RoastCoordinator {
     fn new(min_signers: u16, message: &[u8]) -> Self {
         Self {
@@ -47,6 +52,7 @@ impl RoastCoordinator {
     }
 }
 
+#[cfg(feature = "nostr")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = thread_rng();
     let (max_signers, min_signers) = (5, 3);
@@ -108,4 +114,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+#[cfg(not(feature = "nostr"))]
+fn main() {
+    println!("This example requires the 'nostr' feature. Please run with: cargo run --example roast-experiment --features nostr");
 }
