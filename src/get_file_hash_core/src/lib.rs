@@ -21,6 +21,9 @@ use frost_secp256k1::round2::SignatureShare;
 use frost_secp256k1::SigningPackage;
 #[cfg(feature = "nostr")]
 use rand::thread_rng;
+#[cfg(feature = "nostr")]
+pub use frost_secp256k1_tr as frost_bip340;
+
 //#[cfg(feature = "nostr")]
 //use std::collections::BTreeMap;
 
@@ -855,9 +858,8 @@ mod tests {
     use sha2::{Digest, Sha256};
     use tempfile;
     use super::get_git_tracked_files;
-    use super::frost;
-    use super::frost_bip340;
-    use frost_bip340::Identifier;
+    use crate::frost::{self, Identifier as FrostIdentifier};
+    use crate::frost_bip340::{self, Identifier as FrostBip340Identifier};
     use std::process::Command;
     #[cfg(feature = "nostr")]
     use nostr_sdk::EventId;
