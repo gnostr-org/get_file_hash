@@ -2,24 +2,35 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 license = "MIT"
+authors = ["gnostr admin@gnostr.org"]
 documentation = "https://github.com/gnostr-org/get_file_hash#readme"
 homepage = "https://github.com/gnostr-org/get_file_hash"
 repository = "https://github.com/gnostr-org/get_file_hash"
+description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
 
 [package]
 name = "get_file_hash"
 version.workspace = true
 edition.workspace = true
-description = "A utility crate providing a procedural macro to compute and embed file hashes at compile time."
+description.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+[package.metadata.wix]
+upgrade-guid = "DED69220-26E3-4406-B564-7F2B58C56F57"
+path-guid = "8DB39A25-8B99-4C25-8CF5-4704353C7C6E"
+license = false
+eula = false
 
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
-get_file_hash_core = { path = "src/get_file_hash_core", version = "0.2.0" }
+get_file_hash_core = { path = "src/get_file_hash_core" }
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"
