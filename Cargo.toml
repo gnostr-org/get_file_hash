@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.2.4"
+version = "0.2.5"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -47,7 +47,7 @@ serial_test = { version = "3.4.0", features = ["test_logging"] }
 log = "0.4"
 
 [dependencies]
-get_file_hash_core = { workspace = true, features = ["nostr"] }
+get_file_hash_core = { workspace = true, features = ["nostr"], version = "0.2.5" }
 sha2 = { workspace = true }
 nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
