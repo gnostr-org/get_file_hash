@@ -74,3 +74,8 @@ lto = "thin"
 
 [dev-dependencies]
 serial_test = { workspace = true }
+
+[[example]]
+name = "gnostr-build"
+path = "examples/gnostr-build.rs"
+required-features = ["nostr"]
