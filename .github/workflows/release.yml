@@ -337,7 +337,6 @@ jobs:
             git commit -m "${name} ${version}"
           done
           git push origin HEAD
-          cargo build --release --features nostr
 
   announce:
     needs:

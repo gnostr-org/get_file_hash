@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -31,7 +31,7 @@ eula = false
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.2" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"
