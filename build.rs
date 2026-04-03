@@ -295,14 +295,16 @@ async fn main() {
 
             let event_builder = EventBuilder::text_note(content.clone()).tags(tags);
 
-            publish_nostr_event_if_release(
+            if let Some(event_id) = publish_nostr_event_if_release(
                 hex::encode(Sha256::digest(content.as_bytes())),
                 keys,
                 event_builder,
                 relay_urls.clone(),
                 "build_manifest.json",
                 &output_dir,
-            ).await;
+            ).await {
+
+                let build_manifest_event_id = Some(event_id);
 
             // Publish metadata event for the build manifest
             get_file_hash_core::publish_metadata_event(
@@ -323,7 +325,7 @@ async fn main() {
                 println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
             }
 
-            let announcement_keys = Keys::generate(); // Use new keys for the announcement event
+            let announcement_keys = Keys::new(SecretKey::from_hex(build_manifest_event_id.unwrap().to_hex().as_str()).expect("Failed to create Nostr keys from build_manifest_event_id"));
             let announcement_pubkey_hex = announcement_keys.public_key().to_string();
 
             // Publish NIP-34 Repository Announcement
@@ -339,6 +341,7 @@ async fn main() {
                 &announcement_pubkey_hex
             ).await {
                 // Successfully published announcement
+            }
             }
         }
     }
