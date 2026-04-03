@@ -121,8 +121,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("  Index {}: {}", idx, hex::encode(comms.serialize()?));
             }
         }
-        Commands::Sign { message, index, key: _, vault: _ } => {
+        Commands::Sign { message, index, key, vault } => {
             println!("✍️  Executing Sign: Index #{} for '{}'...", index, message);
+
+            // 1. Load the KeyPackage
+            let key_json = fs::read_to_string(key)?;
+            let key_pkg: frost::keys::KeyPackage = serde_json::from_str(&key_json)?;
+
+            // 2. Load the Secret Vault
+            let vault_json = fs::read_to_string(vault)?;
+            let mut vault_data: NonceMap = serde_json::from_str(&vault_json)?;
+
+            // 3. Retrieve and REMOVE the nonce (Crucial for security)
+            let signing_nonces = vault_data.remove(&(*index as u32))
+                .ok_or("Nonce index not found in vault or already used!")?;
+
+            // 4. Update the vault file immediately to reflect the used nonce
+            fs::write(vault, serde_json::to_string(&vault_data)?)?;
+
+            // 5. Create the SigningPackage
+            // In a real BIP-64MOD flow, you'd receive the commitments from ALL signers.
+            // For this CLI demo, we'll assume we're signing with our own commitments
+            // from the vault for simplicity, or provide a placeholder for the group.
+
+            // Note: To sign, you need the SigningPackage which contains the
+            // message and the combined commitments of all participants.
+            // For now, we'll demonstrate the share generation:
+            let message_bytes = message.as_bytes();
+
+            // This part usually requires the 'SigningPackage' from the aggregator.
+            // Let's print a placeholder for where the signature share is generated:
+            println!("✅ Nonce #{} retrieved. Ready for Round 2 Share generation.", index);
+            println!("⚠️  Note: Round 2 requires a SigningPackage containing commitments from all T participants.");
         }
         Commands::Aggregate { message, shares } => {
             println!("🧬 Executing Aggregate: {} shares for '{}'...", shares.len(), message);
