@@ -57,7 +57,7 @@ async fn publish_nostr_event_if_release(
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    relay_urls: &mut Vec<String>,
+    _relay_urls: &mut Vec<String>,
     file_path_str: &str,
     output_dir: &PathBuf,
     total_bytes_sent: &mut usize,
@@ -109,6 +109,8 @@ pub async fn get_repo_announcement_event(
     output_dir: &PathBuf,
     public_key_hex: &str,
 ) -> Option<EventId> {
+    println!("cargo:warning=Debug: get_repo_announcement_event received git_commit_hash = {}", git_commit_hash);
+    println!("cargo:warning=Debug: get_repo_announcement_event received git_branch = {}", git_branch);
 
     let mut tags = vec![
         Tag::parse(["d", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
@@ -212,6 +214,7 @@ async fn main() {
             String::new()
         };
         println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
+        println!("cargo:warning=Debug: git_commit_hash_str = {}", git_commit_hash_str);
 
         let git_branch_output = std::process::Command::new("git")
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -228,6 +231,7 @@ async fn main() {
             String::new()
         };
         println!("cargo:rustc-env=GIT_BRANCH={}", git_branch_str);
+        println!("cargo:warning=Debug: git_branch_str = {}", git_branch_str);
     } else {
         println!("cargo:rustc-env=GIT_COMMIT_HASH=");
         println!("cargo:rustc-env=GIT_BRANCH=");
@@ -367,8 +371,8 @@ async fn main() {
                 DEFAULT_BANNER_URL,
                 &format!("build_manifest:{}", package_version),
             ).await;
-            let git_commit_hash = std::env::var("GIT_COMMIT_HASH").unwrap_or_default();
-            let git_branch = std::env::var("GIT_BRANCH").unwrap_or_default();
+            let git_commit_hash = &git_commit_hash_str;
+            let git_branch = &git_branch_str;
             let repo_url = std::env::var("CARGO_PKG_REPOSITORY").unwrap();
             let repo_name = std::env::var("CARGO_PKG_NAME").unwrap();
             let repo_description = std::env::var("CARGO_PKG_DESCRIPTION").unwrap();
