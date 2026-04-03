@@ -132,27 +132,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let vault_json = fs::read_to_string(vault)?;
             let mut vault_data: NonceMap = serde_json::from_str(&vault_json)?;
 
-            // 3. Retrieve and REMOVE the nonce (Crucial for security)
+            // 3. Retrieve and REMOVE the nonce
             let signing_nonces = vault_data.remove(&(*index as u32))
                 .ok_or("Nonce index not found in vault or already used!")?;
 
-            // 4. Update the vault file immediately to reflect the used nonce
+            // Update the vault file immediately
             fs::write(vault, serde_json::to_string(&vault_data)?)?;
 
-            // 5. Create the SigningPackage
-            // In a real BIP-64MOD flow, you'd receive the commitments from ALL signers.
-            // For this CLI demo, we'll assume we're signing with our own commitments
-            // from the vault for simplicity, or provide a placeholder for the group.
+            // 4. Construct the SigningPackage
+            let mut commitments_map = BTreeMap::new();
+            commitments_map.insert(*key_pkg.identifier(), *signing_nonces.commitments());
 
-            // Note: To sign, you need the SigningPackage which contains the
-            // message and the combined commitments of all participants.
-            // For now, we'll demonstrate the share generation:
-            let message_bytes = message.as_bytes();
+            let signing_package = frost::SigningPackage::new(commitments_map, message.as_bytes());
 
-            // This part usually requires the 'SigningPackage' from the aggregator.
-            // Let's print a placeholder for where the signature share is generated:
-            println!("✅ Nonce #{} retrieved. Ready for Round 2 Share generation.", index);
-            println!("⚠️  Note: Round 2 requires a SigningPackage containing commitments from all T participants.");
+            // 5. Generate the Signature Share (Round 2)
+            let signature_share = frost::round2::sign(&signing_package, &signing_nonces, &key_pkg)?;
+
+            // 6. Output the Share
+            let share_hex = hex::encode(signature_share.serialize());
+            println!("✅ Signature Share generated for Participant {:?}", key_pkg.identifier());
+            println!("📋 Share (Hex): {}", share_hex);
+
+            let share_file = format!("p{}_share.json", hex::encode(key_pkg.identifier().serialize()));
+            fs::write(&share_file, serde_json::to_string(&signature_share)?)?;
+            println!("💾 Share saved to {}", share_file);
         }
         Commands::Aggregate { message, shares } => {
             println!("🧬 Executing Aggregate: {} shares for '{}'...", shares.len(), message);
