@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -19,6 +19,7 @@ description.workspace = true
 repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
+license.workspace = true
 
 [package.metadata.wix]
 upgrade-guid = "DED69220-26E3-4406-B564-7F2B58C56F57"
@@ -30,7 +31,7 @@ eula = false
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.2" }
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"
