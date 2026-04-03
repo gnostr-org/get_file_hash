@@ -44,6 +44,10 @@ async fn main() {
         };
         println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
 
+        // Create padded_commit_hash
+        let padded_commit_hash = format!("{:0>64}", &git_commit_hash_str);
+        println!("cargo:rustc-env=PADDED_COMMIT_HASH={}", padded_commit_hash);
+
         let git_branch_output = std::process::Command::new("git")
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
             .stdout(std::process::Stdio::piped())
