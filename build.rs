@@ -5,7 +5,9 @@ use get_file_hash_core::get_file_hash;
 use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
 use serde_json::to_string;
+
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
@@ -55,9 +57,10 @@ async fn publish_nostr_event_if_release(
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    _relay_urls: &mut Vec<String>,
+    relay_urls: &mut Vec<String>,
     file_path_str: &str,
     output_dir: &PathBuf,
+    total_bytes_sent: &mut usize,
 ) -> Option<EventId> {
     let public_key = keys.public_key().to_string();
 
@@ -69,7 +72,8 @@ async fn publish_nostr_event_if_release(
             let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
             // Print successful relays
             for relay_url in event_output.success.iter() {
-                println!("Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
+                println!("cargo:warning=Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
+                *total_bytes_sent += event_json_size;
             }
             // Print failed relays and remove "unfriendly" relays from the list
             for (relay_url, error_msg) in event_output.failed.iter() {
@@ -188,6 +192,7 @@ async fn main() {
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
 
 
+
     println!("cargo:rustc-env=CARGO_PKG_NAME={}", env!("CARGO_PKG_NAME"));
     println!("cargo:rustc-env=CARGO_PKG_VERSION={}", env!("CARGO_PKG_VERSION"));
 
@@ -279,6 +284,7 @@ async fn main() {
         println!("cargo:warning=Added and connected to {} relays.", relay_urls.len());
 
         let mut published_event_ids: Vec<Tag> = Vec::new();
+        let mut total_bytes_sent: usize = 0;
 
         for file_path_str in &files_to_publish {
             println!("cargo:warning=Processing file: {}", file_path_str);
@@ -299,7 +305,7 @@ async fn main() {
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(&mut client, file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str, &output_dir).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(&mut client, file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str, &output_dir, &mut total_bytes_sent).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
@@ -348,6 +354,7 @@ async fn main() {
                 &mut relay_urls,
                 "build_manifest.json",
                 &output_dir,
+                &mut total_bytes_sent,
             ).await {
 
                 let build_manifest_event_id = Some(event_id);
@@ -391,6 +398,7 @@ async fn main() {
             }
             }
         }
+        println!("cargo:warning=Total bytes sent to Nostr relays: {} bytes", total_bytes_sent);
     }
 }
 // deterministic nostr event build example
