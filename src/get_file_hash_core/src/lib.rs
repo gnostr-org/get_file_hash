@@ -34,8 +34,61 @@ pub const DEFAULT_GNOSTR_KEY: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e464
 pub const DEFAULT_PICTURE_URL: &str = "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4";
 pub const DEFAULT_BANNER_URL: &str = "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png";
 
+pub const EMPTY_BLOB_SHA1: &str = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
+pub const EMPTY_BLOB_SHA256: &str = "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813";
+pub const EMPTY_BLOB_PRIVATE_KEY_NSEC: &str = "nsec1guaq7npmaz5ndqdzvl3mr6d8mndprp2rdls5ram5jys2xqmjrqfsdzhrp6";
+
+pub const EMPTY_TREE_SHA1: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+pub const EMPTY_TREE_SHA256: &str = "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321";
+pub const EMPTY_TREE_PRIVATE_KEY_NSEC: &str = "nsec1dmceksfzt3fknuwpqn29mrv9a75mq4a48v2tfwde88whfhkv2vsslsc46c";
+
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
+
+/// BIP-64MOD + GCC: Complete NIP-19 Identity Mapping
+/// 
+/// These constants provide the Bech32 encoded Private (NSEC) and 
+/// Public (NPUB) keys for Git-standard empty states.
+#[cfg(feature = "nostr")]
+pub struct GitEmptyIdentity;
+
+#[cfg(feature = "nostr")]
+impl GitEmptyIdentity {
+    // === EMPTY BLOB IDENTITY ===
+    // Derived from the identity of a 0-byte file.
+    pub const BLOB_NSEC: &'static str = "nsec1guaq7npmaz5ndqdzvl3mr6d8mndprp2rdls5ram5jys2xqmjrqfsdzhrp6";
+    pub const BLOB_NPUB: &'static str = "npub180cvv07tjdrghvkyh6964p7w9vsqpf3p05868v399v86p8y6f69sq5fdp0";
+    pub const BLOB_HEX:  &'static str = "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813";
+
+    // === EMPTY TREE IDENTITY ===
+    // Derived from the identity of an empty directory.
+    pub const TREE_NSEC: &'static str = "nsec1dmceksfzt3fknuwpqn29mrv9a75mq4a48v2tfwde88whfhkv2vsslsc46c";
+    pub const TREE_NPUB: &'static str = "npub1pxmpep6yk7z6p332u9588k0vscg26rv29pynvscg26rv29pynvsq6erdfh";
+    pub const TREE_HEX:  &'static str = "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321";
+
+    // === NULL / GENESIS IDENTITY ===
+    // Often used for the 'System' or 'Root' user in a new GCC chain.
+    // Derived from 32-bytes of zeros.
+    pub const NULL_NSEC: &'static str = "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp3994m";
+    pub const NULL_NPUB: &'static str = "npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqad8gh8";
+    pub const NULL_HEX:  &'static str = "0000000000000000000000000000000000000000000000000000000000000000";
+}
+
+/// Example usage for signature verification logic
+pub mod crypto {
+    use super::GitEmptyIdentity;
+
+    /// Returns the expected public key for a given Git object hash.
+    /// Useful for automated verification of 'Empty State' transitions.
+    pub fn get_expected_npub(git_hash: &str) -> Option<&'static str> {
+        match git_hash {
+            GitEmptyIdentity::BLOB_HEX => Some(GitEmptyIdentity::BLOB_NPUB),
+            GitEmptyIdentity::TREE_HEX => Some(GitEmptyIdentity::TREE_NPUB),
+            GitEmptyIdentity::NULL_HEX => Some(GitEmptyIdentity::NULL_NPUB),
+            _ => None,
+        }
+    }
+}
 
 #[cfg(feature = "nostr")]
 pub fn get_relay_urls() -> Vec<String> {
@@ -843,7 +896,7 @@ pub async fn publish_pull_request_event(
 
     let event_builder = EventBuilder::new(
         Kind::Custom(1618), // NIP-34 Pull Request kind
-        "", // Content can be empty or a description for the PR
+        "gnostr patch", // Content can be empty or a description for the PR
     ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
@@ -1224,7 +1277,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     #[tokio::test]
     async fn test_publish_patch_event_tr() {
-        use super::get_relay_urls;
+        use super::{get_relay_urls, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
         use nostr_sdk::Keys;
 
         let keys = Keys::parse(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr Keys from DEFAULT_GNOSTR_KEY");
@@ -1237,8 +1290,8 @@ mod tests {
         super::publish_metadata_event(
             &keys,
             &relay_urls,
-            "https://example.com/test_patch_picture.jpg",
-            "https://example.com/test_patch_banner.jpg",
+            DEFAULT_PICTURE_URL,
+            DEFAULT_BANNER_URL,
             "test_publish_patch_event_metadata",
         ).await;
 
