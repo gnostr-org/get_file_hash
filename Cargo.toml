@@ -29,6 +29,7 @@ eula = false
 
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
+frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
 get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
