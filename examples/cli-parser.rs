@@ -159,6 +159,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Aggregate { message, shares } => {
             println!("🧬 Executing Aggregate: {} shares for '{}'...", shares.len(), message);
+
+            // 1. Load the Group Public Key
+            let pub_json = fs::read_to_string("group_public.json")?;
+            let pubkey_package: frost::keys::PublicKeyPackage = serde_json::from_str(&pub_json)?;
+
+            // 2. Initialize the map with EXPLICIT types
+            // Key: Identifier, Value: SignatureShare
+            let mut signature_shares: BTreeMap<frost::Identifier, frost::round2::SignatureShare> = BTreeMap::new();
+
+            // 3. Load and deserialize all shares
+            for share_path in shares {
+                let share_json = fs::read_to_string(share_path)?;
+                let share: frost::round2::SignatureShare = serde_json::from_str(&share_json)?;
+
+                // In a production BIP-64MOD tool, we'd need to know which ID sent this.
+                // For now, we'll assume the share filename or metadata tells us,
+                // but here is how you insert it once you have the ID:
+                // signature_shares.insert(participant_id, share);
+            }
+
+            // 4. Final Aggregation (Conceptual for now)
+            // Once you have the SigningPackage and all T shares:
+            // let group_signature = frost::aggregate(&signing_package, &signature_shares, &pubkey_package)?;
+
+            println!("✅ Aggregator initialized with {} potential shares.", shares.len());
         }
     }
 

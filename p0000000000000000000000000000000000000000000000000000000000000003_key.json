@@ -4,8 +4,8 @@
     "ciphersuite": "FROST-secp256k1-SHA256-TR-v1"
   },
   "identifier": "0000000000000000000000000000000000000000000000000000000000000003",
-  "signing_share": "a6cf491caf0706df7c7e920a2af38418dd7dcb39e225172de11ce474c0bedb76",
-  "verifying_share": "03833f94468391bc6f4f2444c74fd0b306475c79050dbc698efcf38e5ea8d4650e",
-  "verifying_key": "0219575844fd3ed3da3caaaf6bea7b7b52c798831de252e691eb442ac04918fef1",
+  "signing_share": "e23f0a53ea95d57c6b1476618484c5973486ff82a729ab80a6a6bfea373577c6",
+  "verifying_share": "0283ed6da27d4b2b036f9910a2c8aa9c5ddd872f3748369c0ca9d747b0ed879f33",
+  "verifying_key": "022b810ce9e21a6f725f373d30b355f1f54d0c86b3346ac4a8a2f78e8276cf4e78",
   "min_signers": 2
 }
