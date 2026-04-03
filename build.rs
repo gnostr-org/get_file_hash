@@ -2,7 +2,7 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file, publish_nostr_event_if_release};
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file, publish_nostr_event_if_release, get_repo_announcement_event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
@@ -20,56 +20,6 @@ use std::io::Write;
 
 
 
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-pub async fn get_repo_announcement_event(
-    client: &mut nostr_sdk::Client,
-    _keys: &Keys,
-    relay_urls: &Vec<String>,
-    repo_url: &str,
-    repo_name: &str,
-    repo_description: &str,
-    git_commit_hash: &str,
-    git_branch: &str,
-    output_dir: &PathBuf,
-    public_key_hex: &str,
-) -> Option<EventId> {
-
-    let mut tags = vec![
-        Tag::parse(["d", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["name", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["web", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["clone", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["r", git_commit_hash, "euc"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["maintainers", "gnostr"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        //Tag::parse(["t", "personal-fork"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["t", "gnostr"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["t", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-    ];
-
-    // Append each relay url
-    for relay in relay_urls {
-        tags.push(Tag::parse(["relays", relay].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap());
-    }
-    let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
-    let event = client.sign_event_builder(event_builder).await.unwrap();
-
-    match client.send_event(&event).await {
-        Ok(event_output) => {
-            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
-            
-            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
-            write_event_json_to_file(output_dir, &filename, &event);
-            Some(event_output.val)
-        },
-        Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
-            None
-        },
-    }
-}
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 pub async fn get_repo_patch_event(
     client: &mut nostr_sdk::Client,
