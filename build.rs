@@ -19,9 +19,6 @@ async fn main() {
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
     #[cfg(all(not(debug_assertions), feature = "nostr"))]
 	#[allow(unused_mut)]
-    let mut git_commit_hash_str = String::new();
-    #[cfg(all(not(debug_assertions), feature = "nostr"))]
-	#[allow(unused_mut)]
     let mut git_branch_str = String::new();
 
     println!("cargo:rustc-env=CARGO_PKG_NAME={}", env!("CARGO_PKG_NAME"));
@@ -43,10 +40,6 @@ async fn main() {
             String::new()
         };
         println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
-
-        // Create padded_commit_hash
-        let padded_commit_hash = format!("{:0>64}", &git_commit_hash_str);
-        println!("cargo:rustc-env=PADDED_COMMIT_HASH={}", padded_commit_hash);
 
         let git_branch_output = std::process::Command::new("git")
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -104,8 +97,27 @@ async fn main() {
 
         let files_to_publish: Vec<String> = get_git_tracked_files(&PathBuf::from(&manifest_dir));
 
+        let git_commit_hash_output = std::process::Command::new("git")
+            .args(&["rev-parse", "HEAD"])
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .output()
+            .expect("Failed to execute git command for commit hash");
+
+        let git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
+            String::from_utf8(git_commit_hash_output.stdout).unwrap().trim().to_string()
+        } else {
+            println!("cargo:warning=Git commit hash command failed or returned empty. Status: {:?}, Stderr: {}", 
+                     git_commit_hash_output.status, String::from_utf8_lossy(&git_commit_hash_output.stderr));
+            String::new()
+        };
+        println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
+        // Create padded_commit_hash
+        let padded_commit_hash = format!("{:0>64}", &git_commit_hash_str);
+        println!("cargo:rustc-env=PADDED_COMMIT_HASH={}", padded_commit_hash);
         // Initialize client and keys once
-        let initial_keys = Keys::new(SecretKey::from_hex(&hex::encode(Sha256::digest("initial_seed".as_bytes()))).expect("Failed to create initial Nostr keys"));
+        let initial_secret_key = SecretKey::parse(&padded_commit_hash).expect("Failed to create Nostr SecretKey from PADDED_COMMIT_HASH");
+        let initial_keys = Keys::new(initial_secret_key);
         let mut client = nostr_sdk::Client::new(initial_keys.clone());
         let mut relay_urls = get_file_hash_core::get_relay_urls();
 
