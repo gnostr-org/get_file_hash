@@ -2,6 +2,7 @@
 set -e
 MESSAGE="gnostr-bip64mod-test"
 EXAMPLE="cli-parser"
+FEATURES="nostr"
 
 # 1. Keygen
 cargo run --example $EXAMPLE --features nostr -- keygen --threshold 2 --total 3 -o .
@@ -22,3 +23,23 @@ cargo run --example $EXAMPLE --features nostr -- sign --message "$MESSAGE" --ind
 
 # 4. Aggregate
 cargo run --example $EXAMPLE --features nostr -- aggregate --message "$MESSAGE" p*_share.json
+# 5. Verify the final signature
+echo -e "\n--- Step 6: Verifying Final Signature ---"
+# Configuration
+MESSAGE="gnostr-bip64mod-test"
+EXAMPLE="cli-parser"
+FEATURES="nostr" # Ensure this matches your Cargo.toml feature name
+
+# Capture the Signature Hex from the Aggregate output
+# We use 'tail -n 2' and 'head -n 1' to grab the specific line with the hex
+RAW_OUTPUT=$(cargo run --example $EXAMPLE --features $FEATURES -- aggregate --message "$MESSAGE" p*_share.json)
+SIG_HEX=$(echo "$RAW_OUTPUT" | grep "Final BIP-340 Signature:" | awk '{print $4}')
+
+echo -e "\n--- Step 6: Verifying Final Signature ---"
+echo "Message: $MESSAGE"
+echo "Sig: $SIG_HEX"
+
+cargo run --example $EXAMPLE --features $FEATURES -- verify \
+    --message "$MESSAGE" \
+    --signature "$SIG_HEX" \
+    --public-key "group_public.json"
