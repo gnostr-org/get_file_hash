@@ -278,7 +278,7 @@ async fn main() {
             }
         }
 
-        // Create and publish the linking event
+        // Create and publish the build_manifest
         if !published_event_ids.is_empty() {
 
             //TODO this will be either the default or detected from env vars PRIVATE_KEY
