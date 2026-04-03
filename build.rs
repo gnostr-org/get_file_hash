@@ -2,7 +2,7 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::get_git_tracked_files;
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 
@@ -262,8 +262,8 @@ async fn main() {
                             get_file_hash_core::publish_metadata_event(
                                 &keys,
                                 &relay_urls,
-                                "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
-                                "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
+                                DEFAULT_PICTURE_URL,
+                                DEFAULT_BANNER_URL,
                                 file_path_str,
                             ).await;
                         }
@@ -280,20 +280,24 @@ async fn main() {
 
         // Create and publish the linking event
         if !published_event_ids.is_empty() {
-            let keys = Keys::generate(); // Generate new keys for the linking event
+
+            //TODO this will be either the default or detected from env vars PRIVATE_KEY
+            let keys = Keys::new(SecretKey::from_hex(DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
             let cloned_keys = keys.clone();
             let content = format!("Build manifest for get_file_hash v{}", package_version);
             let mut tags = vec![
+                Tag::parse(["build_manifest", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                Tag::parse(["build_manifest", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                Tag::parse(["build_manifest", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
                 Tag::parse(["build_manifest", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
             ];
             tags.extend(published_event_ids);
 
             let event_builder = EventBuilder::text_note(content.clone()).tags(tags);
 
-            // Use a dummy hash and file_path_str for the linking event, as it's not tied to a single file
             publish_nostr_event_if_release(
                 hex::encode(Sha256::digest(content.as_bytes())),
-                keys, // `keys` is moved here
+                keys,
                 event_builder,
                 relay_urls.clone(),
                 "build_manifest.json",
@@ -304,10 +308,38 @@ async fn main() {
             get_file_hash_core::publish_metadata_event(
                 &cloned_keys, // Use reference to cloned keys here
                 &relay_urls,
-                "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4",
-                "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png",
+                DEFAULT_PICTURE_URL,
+                DEFAULT_BANNER_URL,
                 &format!("build_manifest:{}", package_version),
             ).await;
+            let git_commit_hash = std::env::var("GIT_COMMIT_HASH").unwrap_or_default();
+            let git_branch = std::env::var("GIT_BRANCH").unwrap_or_default();
+            let repo_url = std::env::var("CARGO_PKG_REPOSITORY").unwrap();
+            let repo_name = std::env::var("CARGO_PKG_NAME").unwrap();
+            let repo_description = std::env::var("CARGO_PKG_DESCRIPTION").unwrap();
+
+            let output_dir = PathBuf::from(format!(".gnostr/build/{}", package_version));
+            if let Err(e) = fs::create_dir_all(&output_dir) {
+                println!("cargo:warning=Failed to create output directory {}: {}", output_dir.display(), e);
+            }
+
+            let announcement_keys = Keys::generate(); // Use new keys for the announcement event
+            let announcement_pubkey_hex = announcement_keys.public_key().to_string();
+
+            // Publish NIP-34 Repository Announcement
+            if let Some(_event_id) = get_repo_announcement_event(
+                &announcement_keys,
+                &relay_urls,
+                &repo_url,
+                &repo_name,
+                &repo_description,
+                &git_commit_hash,
+                &git_branch,
+                &output_dir,
+                &announcement_pubkey_hex
+            ).await {
+                // Successfully published announcement
+            }
         }
     }
 }

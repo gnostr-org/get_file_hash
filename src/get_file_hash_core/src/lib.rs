@@ -28,8 +28,10 @@ pub mod frost_mailbox_logic;
 #[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
-//#[cfg(feature = "nostr")]
 pub const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
+pub const DEFAULT_GNOSTR_KEY: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+pub const DEFAULT_PICTURE_URL: &str = "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4";
+pub const DEFAULT_BANNER_URL: &str = "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png";
 
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
@@ -880,6 +882,10 @@ mod tests {
     use nostr_sdk::EventId;
     #[cfg(feature = "nostr")]
     use std::str::FromStr;
+    #[cfg(feature = "nostr")]
+    use nostr_sdk::secp256k1::SecretKey;
+    #[cfg(feature = "nostr")]
+    use nostr_sdk::prelude::FromHex;
 
 
 
@@ -992,9 +998,9 @@ mod tests {
         use super::publish_metadata_event;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
-        let picture_url = "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4";
-        let banner_url = "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png";
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
+        let picture_url = super::DEFAULT_PICTURE_URL;
+        let banner_url = super::DEFAULT_BANNER_URL;
         let file_path_str = "test_file.txt";
 
         // This test primarily checks that the function doesn't panic
@@ -1018,7 +1024,7 @@ mod tests {
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
@@ -1055,7 +1061,7 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-patch";
         let commit_id = "fedcba9876543210fedcba9876543210fedcba";
@@ -1086,7 +1092,7 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-pr";
         let commit_id = "0123456789abcdef0123456789abcdef01234567";
@@ -1129,7 +1135,7 @@ mod tests {
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-pr-update";
         let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
@@ -1163,7 +1169,7 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-state";
         let branch_name = "main";
@@ -1301,9 +1307,9 @@ mod tests {
         use super::publish_metadata_event;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
-        let picture_url = "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4";
-        let banner_url = "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png";
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
+        let picture_url = super::DEFAULT_PICTURE_URL;
+        let banner_url = super::DEFAULT_BANNER_URL;
         let file_path_str = "test_file.txt";
 
         // This test primarily checks that the function doesn't panic
@@ -1327,7 +1333,7 @@ mod tests {
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let project_name = "test-nip34-repo";
         let description = "A test repository for NIP-34 announcements.";
@@ -1364,7 +1370,7 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-patch";
         let commit_id = "fedcba9876543210fedcba9876543210fedcba";
@@ -1395,7 +1401,7 @@ mod tests {
         use super::get_relay_urls;
         use nostr_sdk::Keys;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-pr";
         let commit_id = "0123456789abcdef0123456789abcdef01234567";
@@ -1438,7 +1444,7 @@ mod tests {
         use nostr_sdk::{Keys, EventId};
         use std::str::FromStr;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-pr-update";
         let pr_event_id = EventId::from_str("f6e4d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9").unwrap(); // Placeholder EventId
@@ -1517,7 +1523,7 @@ mod tests {
         use nostr_sdk::EventId;
         use std::str::FromStr;
 
-        let keys = Keys::generate();
+        let keys = Keys::new(SecretKey::from_hex(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr keys from DEFAULT_GNOSTR_KEY"));
         let relay_urls = get_relay_urls();
         let d_tag = "test-repo-for-issue";
         let issue_id = "456";
