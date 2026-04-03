@@ -2,7 +2,7 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
@@ -18,16 +18,6 @@ use ::hex;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::io::Write;
 
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-fn should_remove_relay(error_msg: &str) -> bool {
-    error_msg.contains("relay not connected") ||
-    error_msg.contains("not in web of trust") ||
-    error_msg.contains("blocked: not authorized") ||
-    error_msg.contains("timeout") ||
-    error_msg.contains("blocked: spam not permitted") ||
-    error_msg.contains("relay experienced an error trying to publish the latest event") ||
-    error_msg.contains("duplicate: event already broadcast")
-}
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 fn write_event_json_to_file(
@@ -287,7 +277,7 @@ async fn main() {
 
         let mut published_event_ids: Vec<Tag> = Vec::new();
         let mut total_bytes_sent: usize = 0;
-
+    
         for file_path_str in &files_to_publish {
             println!("cargo:warning=Processing file: {}", file_path_str);
             match fs::read(file_path_str) {

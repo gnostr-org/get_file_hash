@@ -71,6 +71,17 @@ pub fn get_relay_urls() -> Vec<String> {
         .collect()
 }
 
+#[cfg(feature = "nostr")]
+pub fn should_remove_relay(error_msg: &str) -> bool {
+    error_msg.contains("relay not connected") ||
+    error_msg.contains("not in web of trust") ||
+    error_msg.contains("blocked: not authorized") ||
+    error_msg.contains("timeout") ||
+    error_msg.contains("blocked: spam not permitted") ||
+    error_msg.contains("relay experienced an error trying to publish the latest event") ||
+    error_msg.contains("duplicate: event already broadcast")
+}
+
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
 /// This macro takes a string literal representing a file path, reads the file's bytes
