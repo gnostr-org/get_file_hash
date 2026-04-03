@@ -56,10 +56,9 @@ async fn publish_nostr_event_if_release(
     mut relay_urls: Vec<String>,
     file_path_str: &str,
     output_dir: &PathBuf,
-) -> Option<EventId> {
-    let client = nostr_sdk::Client::new(keys.clone());
-        let public_key = keys.public_key().to_string();
-
+) -> Option<EventId> /* return the update relay_urls so the next call doesnt have to remove bad relays */{
+    let mut client = nostr_sdk::Client::new(keys.clone());
+    let public_key = keys.public_key().to_string();
     for i in (0..relay_urls.len()).rev() {
         let relay_url = &relay_urls[i];
         if let Err(e) = client.add_relay(relay_url).await {
@@ -81,16 +80,13 @@ async fn publish_nostr_event_if_release(
                 println!("cargo:warning=Successfully published to relay: {}", relay_url);
             }
             // Print failed relays and remove "unfriendly" relays from the list
-            let mut relays_to_remove: Vec<String> = Vec::new();
             for (relay_url, error_msg) in event_output.failed.iter() {
                 if should_remove_relay(error_msg) {
-                    relays_to_remove.push(relay_url.to_string());
+                    if let Err(e) = client.remove_relay(relay_url.to_string()).await {
+                        println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
+                    }
+                        println!("cargo:warning=Removed relay {}", relay_url);
                 }
-            }
-            // Remove failed relays from the list
-            relay_urls.retain(|url| !relays_to_remove.contains(url));
-            if !relays_to_remove.is_empty() {
-                println!("cargo:warning=Removed {} unresponsive relays from the list.", relays_to_remove.len());
             }
 
             let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
