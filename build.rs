@@ -2,15 +2,14 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay};
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use serde_json::to_string;
-
-
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
+
 use std::path::PathBuf;
 use sha2::{Digest, Sha256};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
@@ -19,27 +18,6 @@ use ::hex;
 use std::io::Write;
 
 
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-fn write_event_json_to_file(
-    output_dir: &PathBuf,
-    filename: &str,
-    event: &Event,
-) -> Option<()> {
-    let file_path = output_dir.join(filename);
-    if let Some(parent) = file_path.parent() {
-        if let Err(e) = fs::create_dir_all(parent) {
-            println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
-            return None;
-        }
-    }
-    if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
-        println!("Failed to write event JSON to file {}: {}", file_path.display(), e);
-        None
-    } else {
-        println!("Successfully wrote event JSON to {}", file_path.display());
-        Some(())
-    }
-}
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(

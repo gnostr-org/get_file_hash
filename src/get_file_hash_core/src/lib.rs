@@ -71,6 +71,9 @@ pub fn get_relay_urls() -> Vec<String> {
         .collect()
 }
 
+use std::io::Write;
+use std::fs;
+
 #[cfg(feature = "nostr")]
 pub fn should_remove_relay(error_msg: &str) -> bool {
     error_msg.contains("relay not connected") ||
@@ -80,6 +83,28 @@ pub fn should_remove_relay(error_msg: &str) -> bool {
     error_msg.contains("blocked: spam not permitted") ||
     error_msg.contains("relay experienced an error trying to publish the latest event") ||
     error_msg.contains("duplicate: event already broadcast")
+}
+
+#[cfg(feature = "nostr")]
+pub fn write_event_json_to_file(
+    output_dir: &PathBuf,
+    filename: &str,
+    event: &Event,
+) -> Option<()> {
+    let file_path = output_dir.join(filename);
+    if let Some(parent) = file_path.parent() {
+        if let Err(e) = fs::create_dir_all(parent) {
+            println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
+            return None;
+        }
+    }
+    if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
+        println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+        None
+    } else {
+        println!("Successfully wrote event JSON to {}", file_path.display());
+        Some(())
+    }
 }
 
 /// Computes the SHA-256 hash of the specified file at compile time.
