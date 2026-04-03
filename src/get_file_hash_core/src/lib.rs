@@ -800,7 +800,7 @@ pub async fn publish_patch_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Patch event for commit {}. Event ID (raw): {:?}, Event ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
+            println!("cargo:warning=\nPublished NIP-34 Patch event for commit {}.\nEvent ID (raw): {:?},\nEvent ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
