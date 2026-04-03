@@ -5,6 +5,7 @@ use get_file_hash_core::get_file_hash;
 use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
+use serde_json::to_string;
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
@@ -40,10 +41,10 @@ fn write_event_json_to_file(
         }
     }
     if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
-        println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+        println!("Failed to write event JSON to file {}: {}", file_path.display(), e);
         None
     } else {
-        println!("cargo:warning=Successfully wrote event JSON to {}", file_path.display());
+        println!("Successfully wrote event JSON to {}", file_path.display());
         Some(())
     }
 }
@@ -65,9 +66,10 @@ async fn publish_nostr_event_if_release(
     match client.send_event(&event).await {        Ok(event_output) => {
             println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
 
+            let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
             // Print successful relays
             for relay_url in event_output.success.iter() {
-                println!("cargo:warning=Successfully published to relay: {}", relay_url);
+                println!("Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
             }
             // Print failed relays and remove "unfriendly" relays from the list
             for (relay_url, error_msg) in event_output.failed.iter() {
@@ -110,7 +112,6 @@ pub async fn get_repo_announcement_event(
         Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["web", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["clone", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-        Tag::parse(["relays", &"wss://relay.damus.io"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["r", git_commit_hash, "euc"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
@@ -119,10 +120,11 @@ pub async fn get_repo_announcement_event(
         Tag::parse(["t", "gnostr"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
         Tag::parse(["t", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
     ];
-    //TODO append each relay url
-	//for relay in relay_urls ...
-	//Tag::parse(["relays", &relay_urls[relay]].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
 
+    // Append each relay url
+    for relay in relay_urls {
+        tags.push(Tag::parse(["relays", relay].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap());
+    }
     let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
     let event = client.sign_event_builder(event_builder).await.unwrap();
 
