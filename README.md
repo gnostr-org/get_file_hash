@@ -88,7 +88,7 @@ cargo run --example publish_issue --features nostr
 ## [`build.rs`](build.rs)
 
 *   **Target File:** `build.rs`
-*   **SHA-256 Hash:** c051757c6bf7160b4533cd91f8b33daceca615405105439d95b21c040629ace2
+*   **SHA-256 Hash:** 20c958c8cbb5c77cf5eb3763b6da149b61241d328df52d39b7aa97903305c889
 *   **Status:** Integrity Verified..
 
 ##
@@ -96,7 +96,7 @@ cargo run --example publish_issue --features nostr
 ## [`Cargo.toml`](Cargo.toml)
 
 *   **Target File:** `Cargo.toml`
-*   **SHA-256 Hash:** 51d2b55ae870a56189b288ec1d5148c352a1130f9d67f09c3ca81ae74fcd2070
+*   **SHA-256 Hash:** 94d00044d1e916aafcf6d58720d37874e35ab3bb2bdbc15959a8bfd1370c3d3e
 *   **Status:** Integrity Verified..
 
 ##
@@ -104,6 +104,6 @@ cargo run --example publish_issue --features nostr
 ## [`src/lib.rs`](src/lib.rs)
 
 *   **Target File:** `src/lib.rs`
-*   **SHA-256 Hash:** 8d6bbca3b8782587da9f73589aa15b42a1d9e7a10195fc997d843d7ff5e9e5e7
+*   **SHA-256 Hash:** 591593482a6c9aac8793aa1e488e613f52a4effb1ec3465fd9d6a54537f2b123
 *   **Status:** Integrity Verified..
 
