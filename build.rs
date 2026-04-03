@@ -109,8 +109,6 @@ pub async fn get_repo_announcement_event(
     output_dir: &PathBuf,
     public_key_hex: &str,
 ) -> Option<EventId> {
-    println!("cargo:warning=Debug: get_repo_announcement_event received git_commit_hash = {}", git_commit_hash);
-    println!("cargo:warning=Debug: get_repo_announcement_event received git_branch = {}", git_branch);
 
     let mut tags = vec![
         Tag::parse(["d", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
@@ -192,6 +190,8 @@ pub async fn get_repo_patch_event(
 async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
+    let mut git_commit_hash_str = String::new();
+    let mut git_branch_str = String::new();
 
 
 
@@ -206,7 +206,7 @@ async fn main() {
             .output()
             .expect("Failed to execute git command for commit hash");
 
-        let git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
+        git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
             String::from_utf8(git_commit_hash_output.stdout).unwrap().trim().to_string()
         } else {
             println!("cargo:warning=Git commit hash command failed or returned empty. Status: {:?}, Stderr: {}", 
@@ -214,7 +214,6 @@ async fn main() {
             String::new()
         };
         println!("cargo:rustc-env=GIT_COMMIT_HASH={}", git_commit_hash_str);
-        println!("cargo:warning=Debug: git_commit_hash_str = {}", git_commit_hash_str);
 
         let git_branch_output = std::process::Command::new("git")
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -223,7 +222,7 @@ async fn main() {
             .output()
             .expect("Failed to execute git command for branch name");
 
-        let git_branch_str = if git_branch_output.status.success() && !git_branch_output.stdout.is_empty() {
+        git_branch_str = if git_branch_output.status.success() && !git_branch_output.stdout.is_empty() {
             String::from_utf8(git_branch_output.stdout).unwrap().trim().to_string()
         } else {
             println!("cargo:warning=Git branch command failed or returned empty. Status: {:?}, Stderr: {}", 
@@ -231,7 +230,6 @@ async fn main() {
             String::new()
         };
         println!("cargo:rustc-env=GIT_BRANCH={}", git_branch_str);
-        println!("cargo:warning=Debug: git_branch_str = {}", git_branch_str);
     } else {
         println!("cargo:rustc-env=GIT_COMMIT_HASH=");
         println!("cargo:rustc-env=GIT_BRANCH=");
