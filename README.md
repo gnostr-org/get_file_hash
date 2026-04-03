@@ -96,7 +96,7 @@ cargo run --example publish_issue --features nostr
 ## [`Cargo.toml`](Cargo.toml)
 
 *   **Target File:** `Cargo.toml`
-*   **SHA-256 Hash:** 94d00044d1e916aafcf6d58720d37874e35ab3bb2bdbc15959a8bfd1370c3d3e
+*   **SHA-256 Hash:** e3f392bf23b5fb40902acd313a8c76d1943060b6805ea8615de62f9baf0c6513
 *   **Status:** Integrity Verified..
 
 ##

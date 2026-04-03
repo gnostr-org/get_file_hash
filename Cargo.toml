@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.2.8"
+version = "0.2.9"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
