@@ -204,6 +204,46 @@ pub async fn get_repo_announcement_event(
     }
 }
 
+#[cfg(feature = "nostr")]
+pub async fn publish_repo_patch_event(
+    client: &mut nostr_sdk::Client,
+    _keys: &Keys,
+    _relay_urls: &Vec<String>,
+    repo_url: &str,
+    repo_name: &str,
+    repo_description: &str,
+    git_commit_hash: &str,
+    git_branch: &str,
+    output_dir: &PathBuf,
+    public_key_hex: &str,
+) -> Option<EventId> {
+
+    let tags = vec![
+        Tag::parse(["r", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["name", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+    ];
+
+    let event_builder = EventBuilder::new(Kind::Custom(1617), repo_description).tags(tags);
+    let event = client.sign_event_builder(event_builder).await.unwrap();
+
+    match client.send_event(&event).await {
+        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            write_event_json_to_file(output_dir, &filename, &event);
+            Some(event_output.val)
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            None
+        },
+    }
+}
+
 /// Computes the SHA-256 hash of the specified file at compile time.
 ///
 /// This macro takes a string literal representing a file path, reads the file's bytes
