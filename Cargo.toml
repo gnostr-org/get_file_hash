@@ -33,6 +33,7 @@ frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
 get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
+rand_chacha = "0.3"
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"
@@ -57,7 +58,8 @@ hex = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["full"] }
 frost-secp256k1-tr = { workspace = true }
 rand = { workspace = true }
-serde_json.workspace = true
+serde_json = { workspace = true }
+rand_chacha = { workspace = true }
 
 [build-dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"] }
