@@ -2,7 +2,7 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file};
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file, publish_nostr_event_if_release};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
@@ -19,50 +19,6 @@ use std::io::Write;
 
 
 
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-async fn publish_nostr_event_if_release(
-    client: &mut nostr_sdk::Client,
-    hash: String,
-    keys: Keys,
-    event_builder: EventBuilder,
-    _relay_urls: &mut Vec<String>,
-    file_path_str: &str,
-    output_dir: &PathBuf,
-    total_bytes_sent: &mut usize,
-) -> Option<EventId> {
-    let public_key = keys.public_key().to_string();
-
-    let event = client.sign_event_builder(event_builder).await.unwrap();
-
-    match client.send_event(&event).await {        Ok(event_output) => {
-            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
-
-            let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
-            // Print successful relays
-            for relay_url in event_output.success.iter() {
-                println!("cargo:warning=Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
-                *total_bytes_sent += event_json_size;
-            }
-            // Print failed relays and remove "unfriendly" relays from the list
-            for (relay_url, error_msg) in event_output.failed.iter() {
-                if should_remove_relay(error_msg) {
-                    if let Err(e) = client.remove_relay(relay_url).await {
-                        println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
-                    }
-                     // println!("cargo:warning=Removed relay {}", relay_url);
-                }
-            }
-
-            let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
-            write_event_json_to_file(output_dir, &filename, &event);
-            Some(event_output.val)
-        },
-        Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
-            None
-        },
-    }
-}
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 pub async fn get_repo_announcement_event(
