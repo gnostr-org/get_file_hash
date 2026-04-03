@@ -36,7 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Threshold: {} of {}", min_signers, max_signers);
     println!("Number of shares generated: {}", shares.len()); 
 
-    for (identifier, _share) in &shares {
+    println!("\n--- Verifying Shares Against Commitments ---");
+    for (identifier, share) in &shares {
 
         // The Deterministic Values (Scalar Hex)
         // Because your seed is fixed to the EMPTY_BLOB_SHA256,
@@ -51,7 +52,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // println!("Participant Identifier: {:?} {:?}", identifier, _share);
         //
 
-        println!("Participant Identifier: {:?}", identifier);
+        // In FROST, the 'verify' method checks the share against the VSS commitment
+        match share.verify() {
+            Ok(_) => {
+                println!("Participant {:?}: Valid  ✅", identifier);
+            }
+            Err(e) => {
+                println!("Participant {:?}: INVALID! ❌ Error: {:?}", identifier, e);
+            }
+        }
     }
 
     let pubkey_bytes = pubkey_package.verifying_key().serialize()?;
