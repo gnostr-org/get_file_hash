@@ -33,6 +33,7 @@ frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
 get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
+clap = { version = "4.4", features = ["derive"] }
 rand_chacha = "0.3"
 sha2 = "0.11.0"
 nostr = "0.44.2"
@@ -51,6 +52,7 @@ log = "0.4"
 
 [dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"]  }
+clap = { workspace = true }
 sha2 = { workspace = true }
 nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
