@@ -1,3 +1,4 @@
+#[cfg(feature = "nostr")]
 use serde_json::to_string;
 use std::process::Command;
 use std::path::PathBuf;
@@ -75,8 +76,10 @@ impl GitEmptyIdentity {
 }
 
 /// Example usage for signature verification logic
-pub mod crypto {
-    use super::GitEmptyIdentity;
+#[cfg(feature = "nostr")]
+pub mod git_empty_state {
+    #[cfg(feature = "nostr")]
+	use crate::GitEmptyIdentity;
 
     /// Returns the expected public key for a given Git object hash.
     /// Useful for automated verification of 'Empty State' transitions.
@@ -125,7 +128,9 @@ pub fn get_relay_urls() -> Vec<String> {
         .collect()
 }
 
+#[cfg(feature = "nostr")]
 use std::io::Write;
+#[cfg(feature = "nostr")]
 use std::fs;
 
 #[cfg(feature = "nostr")]
@@ -1093,9 +1098,10 @@ pub fn generate_frost_keys(
     }
 #[cfg(test)]
 mod tests {
-	use serial_test::serial;
-
-	use std::collections::BTreeMap;
+    #[cfg(feature = "nostr")]
+    use serial_test::serial;
+    #[cfg(feature = "nostr")]
+    use std::collections::BTreeMap;
     use std::fs::File;
     use std::io::Write;
     use sha2::{Digest, Sha256};
