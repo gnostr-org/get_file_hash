@@ -2,11 +2,9 @@
 // deterministic nostr event build example
 use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, should_remove_relay, write_event_json_to_file, publish_nostr_event_if_release, get_repo_announcement_event, publish_repo_patch_event};
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, publish_nostr_event_if_release, get_repo_announcement_event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::{EventBuilder, Keys, EventId, Tag, SecretKey, JsonUtil, Kind, Event};
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-use serde_json::to_string;
+use nostr_sdk::{EventBuilder, Keys, Tag, SecretKey};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
 
@@ -14,21 +12,17 @@ use std::path::PathBuf;
 use sha2::{Digest, Sha256};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use ::hex;
-#[cfg(all(not(debug_assertions), feature = "nostr"))]
-use std::io::Write;
-
-
-
-
 
 #[tokio::main]
 async fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
+    #[cfg(all(not(debug_assertions), feature = "nostr"))]
+	#[allow(unused_mut)]
     let mut git_commit_hash_str = String::new();
+    #[cfg(all(not(debug_assertions), feature = "nostr"))]
+	#[allow(unused_mut)]
     let mut git_branch_str = String::new();
-
-
 
     println!("cargo:rustc-env=CARGO_PKG_NAME={}", env!("CARGO_PKG_NAME"));
     println!("cargo:rustc-env=CARGO_PKG_VERSION={}", env!("CARGO_PKG_VERSION"));
@@ -41,7 +35,7 @@ async fn main() {
             .output()
             .expect("Failed to execute git command for commit hash");
 
-        git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
+        let git_commit_hash_str = if git_commit_hash_output.status.success() && !git_commit_hash_output.stdout.is_empty() {
             String::from_utf8(git_commit_hash_output.stdout).unwrap().trim().to_string()
         } else {
             println!("cargo:warning=Git commit hash command failed or returned empty. Status: {:?}, Stderr: {}", 
@@ -57,7 +51,7 @@ async fn main() {
             .output()
             .expect("Failed to execute git command for branch name");
 
-        git_branch_str = if git_branch_output.status.success() && !git_branch_output.stdout.is_empty() {
+        let git_branch_str = if git_branch_output.status.success() && !git_branch_output.stdout.is_empty() {
             String::from_utf8(git_branch_output.stdout).unwrap().trim().to_string()
         } else {
             println!("cargo:warning=Git branch command failed or returned empty. Status: {:?}, Stderr: {}", 
