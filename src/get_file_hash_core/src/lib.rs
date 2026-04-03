@@ -537,8 +537,8 @@ pub async fn publish_metadata_event(
         .expect("Failed to parse metadata JSON");
 
     match client.send_event_builder(EventBuilder::metadata(&metadata)).await {
-        Ok(event_id) => {
-            println!("cargo:warning=Published Nostr metadata event for {}: {:?}", file_path_str, event_id);
+        Ok(_event_id) => {
+            //println!("cargo:warning=Published Nostr metadata event for {}: {:?}", file_path_str, event_id);
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);

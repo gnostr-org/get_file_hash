@@ -54,7 +54,7 @@ async fn publish_nostr_event_if_release(
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    relay_urls: &mut Vec<String>,
+    _relay_urls: &mut Vec<String>,
     file_path_str: &str,
     output_dir: &PathBuf,
 ) -> Option<EventId> {
@@ -75,7 +75,7 @@ async fn publish_nostr_event_if_release(
                     if let Err(e) = client.remove_relay(relay_url).await {
                         println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
                     }
-					 println!("cargo:warning=Removed relay {}", relay_url);
+                     // println!("cargo:warning=Removed relay {}", relay_url);
                 }
             }
 
@@ -93,8 +93,8 @@ async fn publish_nostr_event_if_release(
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 pub async fn get_repo_announcement_event(
     client: &mut nostr_sdk::Client,
-    keys: &Keys,
-    relay_urls: &Vec<String>,
+    _keys: &Keys,
+    _relay_urls: &Vec<String>,
     repo_url: &str,
     repo_name: &str,
     repo_description: &str,
@@ -178,8 +178,8 @@ async fn main() {
 
     println!("cargo:rerun-if-changed=.git/HEAD");
 
-    #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    let mut relay_urls = get_file_hash_core::get_relay_urls();
+    //#[cfg(all(not(debug_assertions), feature = "nostr"))]
+    //let relay_urls = get_file_hash_core::get_relay_urls();
 
     let cargo_toml_hash = get_file_hash!("Cargo.toml");
     println!("cargo:rustc-env=CARGO_TOML_HASH={}", cargo_toml_hash);
