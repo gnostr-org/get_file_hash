@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Keygen { threshold, total, output_dir } => {
             println!("🛠️  Executing Keygen: {}-of-{}...", threshold, total);
 
-            let mut rng = ChaCha20Rng::from_entropy(); 
+            let mut rng = ChaCha20Rng::from_entropy();
 
             let (shares, pubkey_package) = frost::keys::generate_with_dealer(
                 *total, *threshold, IdentifierList::Default, &mut rng
