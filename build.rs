@@ -50,25 +50,15 @@ fn write_event_json_to_file(
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 async fn publish_nostr_event_if_release(
+    client: &mut nostr_sdk::Client,
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
-    mut relay_urls: Vec<String>,
+    relay_urls: &mut Vec<String>,
     file_path_str: &str,
     output_dir: &PathBuf,
-) -> Option<EventId> /* return the update relay_urls so the next call doesnt have to remove bad relays */{
-    let mut client = nostr_sdk::Client::new(keys.clone());
+) -> Option<EventId> {
     let public_key = keys.public_key().to_string();
-    for i in (0..relay_urls.len()).rev() {
-        let relay_url = &relay_urls[i];
-        if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
-        }
-    }
-    println!("cargo:warning=Added {} relays", relay_urls.len());
-
-    client.connect().await;
-    println!("cargo:warning=Connected to {} relays", relay_urls.len());
 
     let event = client.sign_event_builder(event_builder).await.unwrap();
 
@@ -82,10 +72,10 @@ async fn publish_nostr_event_if_release(
             // Print failed relays and remove "unfriendly" relays from the list
             for (relay_url, error_msg) in event_output.failed.iter() {
                 if should_remove_relay(error_msg) {
-                    if let Err(e) = client.remove_relay(relay_url.to_string()).await {
+                    if let Err(e) = client.remove_relay(relay_url).await {
                         println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
                     }
-                        println!("cargo:warning=Removed relay {}", relay_url);
+					 println!("cargo:warning=Removed relay {}", relay_url);
                 }
             }
 
@@ -102,6 +92,7 @@ async fn publish_nostr_event_if_release(
 
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 pub async fn get_repo_announcement_event(
+    client: &mut nostr_sdk::Client,
     keys: &Keys,
     relay_urls: &Vec<String>,
     repo_url: &str,
@@ -112,14 +103,6 @@ pub async fn get_repo_announcement_event(
     output_dir: &PathBuf,
     public_key_hex: &str,
 ) -> Option<EventId> {
-    let client = nostr_sdk::Client::new(keys.clone());
-
-    for relay_url in relay_urls {
-        if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
-        }
-    }
-    client.connect().await;
 
     let tags = vec![
         Tag::parse(["r", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
@@ -196,7 +179,7 @@ async fn main() {
     println!("cargo:rerun-if-changed=.git/HEAD");
 
     #[cfg(all(not(debug_assertions), feature = "nostr"))]
-    let relay_urls = get_file_hash_core::get_relay_urls();
+    let mut relay_urls = get_file_hash_core::get_relay_urls();
 
     let cargo_toml_hash = get_file_hash!("Cargo.toml");
     println!("cargo:rustc-env=CARGO_TOML_HASH={}", cargo_toml_hash);
@@ -228,7 +211,21 @@ async fn main() {
         }
 
         let files_to_publish: Vec<String> = get_git_tracked_files(&PathBuf::from(&manifest_dir));
-        
+
+        // Initialize client and keys once
+        let initial_keys = Keys::new(SecretKey::from_hex(&hex::encode(Sha256::digest("initial_seed".as_bytes()))).expect("Failed to create initial Nostr keys"));
+        let mut client = nostr_sdk::Client::new(initial_keys.clone());
+        let mut relay_urls = get_file_hash_core::get_relay_urls();
+
+        // Add relays to the client
+        for relay_url in relay_urls.iter() {
+            if let Err(e) = client.add_relay(relay_url).await {
+                println!("cargo:warning=Failed to add relay {}: {}", relay_url, e);
+            }
+        }
+        client.connect().await;
+        println!("cargo:warning=Added and connected to {} relays.", relay_urls.len());
+
         let mut published_event_ids: Vec<Tag> = Vec::new();
 
         for file_path_str in &files_to_publish {
@@ -250,7 +247,7 @@ async fn main() {
                             ];
                             let event_builder = EventBuilder::text_note(content).tags(tags);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(file_hash_hex, keys.clone(), event_builder, relay_urls.clone(), file_path_str, &output_dir).await {
+                            if let Some(event_id) = publish_nostr_event_if_release(&mut client, file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str, &output_dir).await {
                                 published_event_ids.push(Tag::event(event_id));
                             }
 
@@ -292,10 +289,11 @@ async fn main() {
             let event_builder = EventBuilder::text_note(content.clone()).tags(tags);
 
             if let Some(event_id) = publish_nostr_event_if_release(
+                &mut client,
                 hex::encode(Sha256::digest(content.as_bytes())),
                 keys,
                 event_builder,
-                relay_urls.clone(),
+                &mut relay_urls,
                 "build_manifest.json",
                 &output_dir,
             ).await {
@@ -326,6 +324,7 @@ async fn main() {
 
             // Publish NIP-34 Repository Announcement
             if let Some(_event_id) = get_repo_announcement_event(
+                &mut client,
                 &announcement_keys,
                 &relay_urls,
                 &repo_url,
