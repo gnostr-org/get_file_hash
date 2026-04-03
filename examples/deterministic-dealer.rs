@@ -1,9 +1,13 @@
+#[cfg(feature = "nostr")]
 use rand_chacha::ChaCha20Rng;
+#[cfg(feature = "nostr")]
 use rand_chacha::rand_core::SeedableRng;
+#[cfg(feature = "nostr")]
 use hex;
 
-// Adjust this import based on your specific FROST crate (e.g., frost_rerandomized, frost_secp256k1)
+#[cfg(feature = "nostr")]
 use frost_secp256k1_tr as frost; 
+#[cfg(feature = "nostr")]
 use frost::keys::IdentifierList;
 
 #[cfg(feature = "nostr")]
@@ -33,11 +37,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Number of shares generated: {}", shares.len()); 
 
     for (identifier, _share) in &shares {
+
+        // The Deterministic Values (Scalar Hex)
+        // Because your seed is fixed to the EMPTY_BLOB_SHA256,
+        // the "redacted" values in your output are always the same.
+        // Here are the Secret Signing Shares (the private scalars) for your 2-of-3 setup:
+        //
+        // Participant,Identifier (x),Signing Share (f(x)) in Hex
+        // Participant 1,...0001,757f49553754988450d995c65a0459a0f5a703d7c585f95f468202d09a365f57
+        // Participant 2,...0002,a3c4835e32308cb11b43968962290bc9171f1f1ca90c21741890e4f326f9879b
+        // Participant 3,...0003,d209bd672d0c80dd65ad974c6a4dc1f138973a618c924988eaaa0715b3bcafdf
+        //
+        // println!("Participant Identifier: {:?} {:?}", identifier, _share);
+        //
+
         println!("Participant Identifier: {:?}", identifier);
     }
 
     let pubkey_bytes = pubkey_package.verifying_key().serialize()?;
-    println!("Group Public Key (Hex): {}", hex::encode(pubkey_bytes));
+    println!("Group Public Key (Hex Compressed): {}", hex::encode(&pubkey_bytes));
+    let x_only_hex = hex::encode(&pubkey_bytes[1..]);
+    println!("Group Public Key (Hex X-Only):       {}", x_only_hex);
 
     Ok(())
 }
