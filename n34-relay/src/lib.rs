@@ -28,25 +28,25 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt};
 
 /// Relay endpoints
-mod endpoints;
+pub mod endpoints;
 /// Relay errors.
-mod errors;
+pub mod errors;
 /// Extension traits
-mod ext_traits;
+pub mod ext_traits;
 /// GRASP git server
-mod git_server;
+pub mod git_server;
 /// Relay pathes.
-mod pathes;
+pub mod pathes;
 /// Raw axum websocket
-mod raw_websocket;
+pub mod raw_websocket;
 /// Our relay.
-mod relay;
+pub mod relay;
 /// Relay configuration.
-mod relay_config;
+pub mod relay_config;
 /// Router state
-mod router_state;
+pub mod router_state;
 /// Some useful utils.
-mod utils;
+pub mod utils;
 
 use self::{errors::RelayResult, relay_config::RelayConfig, router_state::RouterState};
 
