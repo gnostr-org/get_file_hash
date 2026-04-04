@@ -25,7 +25,7 @@ documentation = "https://relay.n34.dev/docs.html"
 homepage      = "https://relay.n34.dev"
 
 [[bin]]
-name = "n34-relay"
+name = "n34_relay"
 path = "src/main.rs"
 
 [dependencies]

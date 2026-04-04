@@ -20,7 +20,7 @@ license = false
 eula = false
 
 [[bin]]
-name = "n34"
+name = "n34-cli"
 path = "src/main.rs"
 
 [dependencies]
