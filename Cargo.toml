@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core", "n34", "n34-relay"]
 
 [workspace.package]
-version = "0.4.1+n34"
+version = "0.4.2+n34"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -32,7 +32,7 @@ nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.1+n34" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.2+n34" }
 rand_chacha = "0.3"
 sha2 = "0.11.0"
 nostr = { version = "0.44.2", features = ["std", "nip46"] }
@@ -186,6 +186,7 @@ nostr = { workspace = true }
 nostr-sdk = { workspace = true }
 hex = { workspace = true }
 tonic-prost-build = "0.14.2"
+[target.'cfg(not(windows))'.build-dependencies]
 protobuf-src = "2.1.0"
 
 # The profile that 'dist' will build with

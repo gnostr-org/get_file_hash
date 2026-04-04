@@ -60,28 +60,30 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+
       - name: Install-deps
-        # We specify bash to get pipefail; it guards against the curl command
-        # failing. Otherwise sh won't catch that curl returned non-0.
-        # Bash is available on GitHub's Windows, macOS, and Linux runners.
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
 
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install protobuf
-
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Use Chocolatey to install protobuf on Windows
             choco install protoc --no-progress
-            # Ensure the path is updated for the current shell session
             echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
           fi
 
-          # Verify installation
           protoc --version
+
   plan:
     needs:
       - install-deps
@@ -179,27 +181,28 @@ jobs:
         run: |
           ${{ matrix.packages_install }}
       - name: Install-deps
-        # We specify bash to get pipefail; it guards against the curl command
-        # failing. Otherwise sh won't catch that curl returned non-0.
-        # Bash is available on GitHub's Windows, macOS, and Linux runners.
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
 
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install protobuf
-
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Use Chocolatey to install protobuf on Windows
             choco install protoc --no-progress
-            # Ensure the path is updated for the current shell session
             echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
           fi
 
-          # Verify installation
           protoc --version
+
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
@@ -248,27 +251,28 @@ jobs:
           path: ~/.cargo/bin/
       - run: chmod +x ~/.cargo/bin/dist
       - name: Install-deps
-        # We specify bash to get pipefail; it guards against the curl command
-        # failing. Otherwise sh won't catch that curl returned non-0.
-        # Bash is available on GitHub's Windows, macOS, and Linux runners.
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
 
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install protobuf
-
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Use Chocolatey to install protobuf on Windows
             choco install protoc --no-progress
-            # Ensure the path is updated for the current shell session
             echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
           fi
 
-          # Verify installation
           protoc --version
+
       # Get all the local artifacts for the global tasks to use (for e.g. checksums)
       - name: Fetch local artifacts
         uses: actions/download-artifact@v4

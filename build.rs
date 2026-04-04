@@ -15,6 +15,14 @@ use ::hex;
 
 #[tokio::main]
 async fn main() {
+    // tonic_prost_build::configure()
+    //     .build_server(true)
+    //     .build_client(true)
+    //     .build_transport(true)
+    //     .protoc_arg("--experimental_allow_proto3_optional")
+    //     #.compile_protos(&["proto/plugins.proto"], &["proto"])
+    //     .compile_protos(&["n34-relay/proto/plugins.proto"], &["n34-relay/proto"])
+    //     .expect("protoc is required to build n34-relay. Install protobuf or set PROTOC to the protoc binary path.");
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
     #[cfg(all(not(debug_assertions), feature = "nostr"))]
