@@ -1,4 +1,4 @@
-#[cfg(feature = "gen-protos")]
+//#[cfg(feature = "gen-protos")]
 fn compile_protos() {
     tonic_prost_build::configure()
         .build_server(true)
@@ -9,8 +9,8 @@ fn compile_protos() {
         .expect("protoc is required");
 }
 
-#[cfg(not(feature = "gen-protos"))]
-fn compile_protos() {}
+//#[cfg(not(feature = "gen-protos"))]
+//fn compile_protos() {}
 
 
 fn main() {

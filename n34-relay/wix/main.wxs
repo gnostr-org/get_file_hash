@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='n34-relay.exe'
+                                Name='n34_relay.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\n34-relay.exe'
+                                Source='$(var.CargoTargetBinDir)\n34_relay.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>
