@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core", "n34", "n34-relay"]
 
 [workspace.package]
-version = "0.4.4-n34.0"
+version = "0.4.5-n34.0"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -33,7 +33,7 @@ frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 gen-protos = []
 
 [workspace.dependencies]
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.4-n34.0" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.5-n34.0" }
 rand_chacha = "0.3"
 sha2 = "0.11.0"
 nostr = { version = "0.44.2", features = ["std", "nip46"] }

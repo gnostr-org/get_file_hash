@@ -203,6 +203,17 @@ jobs:
 
           protoc --version
 
+      - name: Configure Cargo for Windows builds
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # Put target dir somewhere short and less likely to be locked
+          echo "CARGO_TARGET_DIR=D:/cargo-target" >> $GITHUB_ENV
+          # Reduce file-handle pressure / parallel writes
+          echo "CARGO_BUILD_JOBS=2" >> $GITHUB_ENV
+          # Avoid incremental artifacts (less churn, fewer locks)
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
