@@ -22,6 +22,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install system deps (dbus)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libdbus-1-dev
+    - name: Install protobuf (protoc)
+      shell: bash
+      run: |
+        set -euxo pipefail
+        if [[ "${{ runner.os }}" == "macOS" ]]; then
+          brew update
+          brew install protobuf
+        elif [[ "${{ runner.os }}" == "Linux" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+        elif [[ "${{ runner.os }}" == "Windows" ]]; then
+          choco install -y protoc
+        fi
     - name: Build ${{ matrix.features_args }}
       run: cargo build --workspace --verbose ${{ matrix.features_args }}
     - name: Run workspace tests ${{ matrix.features_args }}

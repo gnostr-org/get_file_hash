@@ -2,7 +2,7 @@
 members = [".", "src/get_file_hash_core", "n34", "n34-relay"]
 
 [workspace.package]
-version = "0.3.3+n34"
+version = "0.4.4+n34"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -30,13 +30,14 @@ eula = false
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
+gen-protos = []
 
 [workspace.dependencies]
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.4+n34" }
 rand_chacha = "0.3"
 sha2 = "0.11.0"
-nostr = "0.44.2"
-nostr-sdk = "0.44.0"
+nostr = { version = "0.44.2", features = ["std", "nip46"] }
+nostr-sdk = { version = "0.44.0", default-features = false, features = ["default"] }
 hex = "0.4.2"
 tokio = "1"
 serde_json = "1.0"
@@ -50,10 +51,25 @@ serial_test = { version = "3.4.0", features = ["test_logging"] }
 log = "0.4"
 n34 = { version = "0.4.0", path = "n34" }
 n34-relay = { version = "0.1.0", path = "n34-relay" }
+chrono                     = "0.4.41"
+convert_case               = "0.8.0"
+dirs                       = "6.0.0"
+easy-ext                   = "1.0.2"
+either                     = "1.15.0"
+futures                    = "0.3.31"
+nostr-browser-signer-proxy = "0.43.0"
+regex                      = "1.11.1"
+thiserror                  = "2.0.12"
+toml                       = "0.9.4"
+tracing                    = "0.1.41"
+tracing-subscriber         = "0.3.19"
+
 
 [dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"]  }
 sha2 = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
@@ -64,6 +80,103 @@ serde_json = { workspace = true }
 rand_chacha = { workspace = true }
 n34 = { workspace = true }
 n34-relay = { workspace = true }
+axum               = { version = "0.8.6", features = ["http2", "ws"] }
+base64             = "0.22.1"
+chrono             = "0.4.42"
+config             = { version = "0.15.15", default-features = false, features = ["toml"] }
+const_format       = "0.2.34"
+convert_case       = "0.8.0"
+easy-ext           = "1.0.2"
+either             = "1.15.0"
+flume              = "0.11.1"
+futures            = "0.3.31"
+hyper              = "1.7.0"
+hyper-util         = "0.1.17"
+parking_lot        = { version = "0.12.5", features = ["serde"] }
+prost              = "0.14.1"
+serde              = { version = "1.0.219", features = ["rc"] }
+#serde_json         = "1.0.145"
+serde_with         = "3.15.0"
+sha1               = "0.10.6"
+#sha2               = "0.10.9"
+strum              = { version = "0.27.2", features = ["derive"] }
+thiserror          = "2.0.16"
+tokio-util         = { version = "0.7.17", features = ["io"] }
+toml               = "0.9.5"
+tonic-prost        = "0.14.2"
+tower              = { version = "0.5.2", features = ["limit"] }
+#tracing            = "0.1.41"
+#tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+dirs = "6.0.0"
+rhai = { version = "1.23.4", features = [
+  "no_position",
+  "sync",
+  "serde",
+  "decimal",
+] }
+##tokio = { version = "1.47.1", features = [
+##  "macros",
+##  "rt-multi-thread",
+##  "signal",
+##  "fs",
+##  "process",
+##] }
+tonic = { version = "0.14.2", features = [
+  "tls-ring",
+  "tls-webpki-roots",
+  "gzip",
+  "deflate",
+] }
+tower-http = { version = "0.6.6", features = [
+  "cors",
+  "decompression-br",
+  "decompression-deflate",
+  "decompression-gzip",
+  "decompression-zstd",
+  "trace",
+  "timeout",
+] }
+
+
+
+[dependencies.clap]
+features = ["derive"]
+version  = "4.5.42"
+
+[dependencies.clap-verbosity-flag]
+default-features = false
+features         = ["tracing"]
+version          = "3.0.3"
+
+
+
+  # We frequently switch between stable and unstable versions; this will make the
+  # process easier.
+  ## [dependencies.nostr]
+  ## default-features = false
+  ## features         = ["std"]
+  ## git              = "https://git.4rs.nl/mirrors/nostr.git"
+  ## rev              = "27a1947d3"
+  ## # version          = "0.45.0"
+  [dependencies.nostr-database]
+  default-features = false
+  git              = "https://git.4rs.nl/mirrors/nostr.git"
+  rev              = "27a1947d3"
+  # version          = "0.45.0"
+  [dependencies.nostr-lmdb]
+  default-features = false
+  git              = "https://git.4rs.nl/mirrors/nostr.git"
+  rev              = "27a1947d3"
+  # version          = "0.45.0"
+  [dependencies.nostr-relay-builder]
+  default-features = false
+  git              = "https://git.4rs.nl/mirrors/nostr.git"
+  rev              = "27a1947d3"
+  # version          = "0.45.0"
+
+
+
+
 
 [build-dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"] }
@@ -73,6 +186,9 @@ tokio = { workspace = true, features = ["full"] }
 nostr = { workspace = true }
 nostr-sdk = { workspace = true }
 hex = { workspace = true }
+tonic-prost-build = "0.14.2"
+[target.'cfg(not(windows))'.build-dependencies]
+protobuf-src = "2.1.0"
 
 # The profile that 'dist' will build with
 [profile.dist]

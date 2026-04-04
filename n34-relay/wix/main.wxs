@@ -60,17 +60,17 @@
 
     <Product
         Id='*'
-        Name='get_file_hash'
-        UpgradeCode='DED69220-26E3-4406-B564-7F2B58C56F57'
-        Manufacturer='gnostr admin@gnostr.org'
+        Name='n34-relay'
+        UpgradeCode='036A2A4F-DA54-4FE2-B2D8-8C58D5814874'
+        Manufacturer='Awiteb'
         Language='1033'
         Codepage='1252'
         Version='$(var.Version)'>
 
         <Package Id='*'
             Keywords='Installer'
-            Description='A utility crate providing a procedural macro to compute and embed file hashes at compile time.'
-            Manufacturer='gnostr admin@gnostr.org'
+            Description='A nostr GRASP relay implementation'
+            Manufacturer='Awiteb'
             InstallerVersion='450'
             Languages='1033'
             Compressed='yes'
@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='get_file_hash Installation'/>
+        <Property Id='DiskPrompt' Value='n34-relay Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='get_file_hash'>
+                <Directory Id='APPLICATIONFOLDER' Name='n34-relay'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -110,7 +110,7 @@
                     -->
 
                     <Directory Id='Bin' Name='bin'>
-                        <Component Id='Path' Guid='8DB39A25-8B99-4C25-8CF5-4704353C7C6E' KeyPath='yes'>
+                        <Component Id='Path' Guid='97D3207D-71DB-4DD0-B548-E43E8C664B7D' KeyPath='yes'>
                             <Environment
                                 Id='PATH'
                                 Name='PATH'
@@ -123,33 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='get_file_hash.exe'
+                                Name='n34_relay.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\get_file_hash.exe'
-                                KeyPath='yes'/>
-                        </Component>
-                        <Component Id='binary1' Guid='*'>
-                            <File
-                                Id='exe1'
-                                Name='n34.exe'
-                                DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\n34.exe'
-                                KeyPath='yes'/>
-                        </Component>
-                        <Component Id='binary2' Guid='*'>
-                            <File
-                                Id='exe2'
-                                Name='n34-relay.exe'
-                                DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\n34-relay.exe'
-                                KeyPath='yes'/>
-                        </Component>
-                        <Component Id='binary3' Guid='*'>
-                            <File
-                                Id='exe3'
-                                Name='readme.exe'
-                                DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\readme.exe'
+                                Source='$(var.CargoTargetBinDir)\n34_relay.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>
@@ -174,9 +150,6 @@
             <!--<ComponentRef Id='License'/>-->
 
             <ComponentRef Id='binary0'/>
-            <ComponentRef Id='binary1'/>
-            <ComponentRef Id='binary2'/>
-            <ComponentRef Id='binary3'/>
 
             <Feature
                 Id='Environment'
@@ -200,7 +173,7 @@
         <!--<Icon Id='ProductICO' SourceFile='wix\Product.ico'/>-->
         <!--<Property Id='ARPPRODUCTICON' Value='ProductICO' />-->
 
-        <Property Id='ARPHELPLINK' Value='https://github.com/gnostr-org/get_file_hash'/>
+        <Property Id='ARPHELPLINK' Value='https://relay.n34.dev/docs.html'/>
         
         <UI>
             <UIRef Id='WixUI_FeatureTree'/>

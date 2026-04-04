@@ -13,8 +13,24 @@ use sha2::{Digest, Sha256};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use ::hex;
 
+#[cfg(feature = "gen-protos")]
+fn compile_protos() {
+    tonic_prost_build::configure()
+        .build_server(true)
+        .build_client(true)
+        .build_transport(true)
+        .protoc_arg("--experimental_allow_proto3_optional")
+        //.compile_protos(&["proto/plugins.proto"], &["proto"])
+        .compile_protos(&["n34-relay/proto/plugins.proto"], &["n34-relay/proto"])
+        .expect("protoc is required");
+}
+
+#[cfg(not(feature = "gen-protos"))]
+fn compile_protos() {}
+
 #[tokio::main]
 async fn main() {
+	compile_protos();
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let is_git_repo = std::path::Path::new(&manifest_dir).join(".git").exists();
     #[cfg(all(not(debug_assertions), feature = "nostr"))]

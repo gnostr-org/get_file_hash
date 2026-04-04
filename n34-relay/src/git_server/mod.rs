@@ -69,6 +69,7 @@ const CACHE_CONTROL_NO_CACHE: HeaderValue =
 /// );
 /// # }
 /// ```
+#[macro_export]
 macro_rules! git_router {
     ($($path:tt => $endpoint:expr)+) => {
             axum::Router::new()

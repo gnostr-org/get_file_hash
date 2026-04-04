@@ -39,14 +39,15 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
+  pull_request:
   push:
     tags:
-      - "**[0-9]+.[0-9]+.[0-9]+*"
+      - '**[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
   # Run 'dist plan' (or host) to determine what tasks we need to do
-  plan:
-    runs-on: "ubuntu-22.04"
+  install-deps:
+    runs-on: "ubuntu-latest"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
       tag: ${{ !github.event.pull_request && github.ref_name || '' }}
@@ -59,29 +60,46 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install system deps (dbus)
-        if: runner.os == 'Linux'
+
+      - name: Install-deps
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libdbus-1-dev
-      - name: Install protobuf (protoc)
-        shell: bash
-        run: |
-          set -euxo pipefail
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            brew update
-            brew install protobuf
-          elif [[ "${{ runner.os }}" == "Linux" ]]; then
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get install -y protobuf-compiler
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
+
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            choco install -y protoc
+            choco install protoc --no-progress
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
           fi
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+          protoc --version
+
+  plan:
+    needs:
+      - install-deps
+    runs-on: "ubuntu-latest"
+    outputs:
+      val: ${{ steps.plan.outputs.manifest }}
+      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
+      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
+      publishing: ${{ !github.event.pull_request }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -115,6 +133,7 @@ jobs:
     # Let the initial task tell us to not run (currently very blunt)
     needs:
       - plan
+      - install-deps
     if: ${{ fromJson(needs.plan.outputs.val).ci.github.artifacts_matrix.include != null && (needs.plan.outputs.publishing == 'true' || fromJson(needs.plan.outputs.val).ci.github.pr_run_mode == 'upload') }}
     strategy:
       fail-fast: false
@@ -142,10 +161,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |
@@ -165,6 +180,29 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Install-deps
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
+
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            choco install protoc --no-progress
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
+          fi
+
+          protoc --version
+
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
@@ -195,25 +233,46 @@ jobs:
   build-global-artifacts:
     needs:
       - plan
+      - install-deps
       - build-local-artifacts
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: target/distrib/global-dist-manifest.json
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
           name: cargo-dist-cache
           path: ~/.cargo/bin/
       - run: chmod +x ~/.cargo/bin/dist
+      - name: Install-deps
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libdbus-1-dev curl unzip
+
+            # Install a pinned modern protoc
+            PROTOC_ZIP=protoc-25.3-linux-x86_64.zip
+            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3/$PROTOC_ZIP
+            sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+            sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+            rm -f $PROTOC_ZIP
+
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            choco install protoc --no-progress
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
+          fi
+
+          protoc --version
+
       # Get all the local artifacts for the global tasks to use (for e.g. checksums)
       - name: Fetch local artifacts
         uses: actions/download-artifact@v4
@@ -244,13 +303,14 @@ jobs:
   host:
     needs:
       - plan
+      - install-deps
       - build-local-artifacts
       - build-global-artifacts
     # Only run if we're "publishing", and only if plan, local and global didn't fail (skipped is fine)
     if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result == 'success') && (needs.build-local-artifacts.result == 'skipped' || needs.build-local-artifacts.result == 'success') }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     outputs:
       val: ${{ steps.host.outputs.manifest }}
     steps:
@@ -258,10 +318,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
@@ -315,7 +371,10 @@ jobs:
     needs:
       - plan
       - host
-    runs-on: "ubuntu-22.04"
+      - install-deps
+      - build-local-artifacts
+      - build-global-artifacts
+    runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PLAN: ${{ needs.plan.outputs.val }}
@@ -355,18 +414,21 @@ jobs:
             git add "Formula/${filename}"
             git commit -m "${name} ${version}"
           done
-          git push origin HEAD
+          git push
 
   announce:
     needs:
       - plan
+      - install-deps
+      - build-local-artifacts
+      - build-global-artifacts
       - host
       - publish-homebrew-formula
     # use "always() && ..." to allow us to wait for all publish jobs while
     # still allowing individual publish jobs to skip themselves (for prereleases).
     # "host" however must run to completion, no skipping allowed!
     if: ${{ always() && needs.host.result == 'success' && (needs.publish-homebrew-formula.result == 'skipped' || needs.publish-homebrew-formula.result == 'success') }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
