@@ -50,10 +50,25 @@ serial_test = { version = "3.4.0", features = ["test_logging"] }
 log = "0.4"
 n34 = { version = "0.4.0", path = "n34" }
 n34-relay = { version = "0.1.0", path = "n34-relay" }
+chrono                     = "0.4.41"
+convert_case               = "0.8.0"
+dirs                       = "6.0.0"
+easy-ext                   = "1.0.2"
+either                     = "1.15.0"
+futures                    = "0.3.31"
+nostr-browser-signer-proxy = "0.43.0"
+regex                      = "1.11.1"
+thiserror                  = "2.0.12"
+toml                       = "0.9.4"
+tracing                    = "0.1.41"
+tracing-subscriber         = "0.3.19"
+
 
 [dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"]  }
 sha2 = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
@@ -64,6 +79,16 @@ serde_json = { workspace = true }
 rand_chacha = { workspace = true }
 n34 = { workspace = true }
 n34-relay = { workspace = true }
+[dependencies.clap]
+features = ["derive"]
+version  = "4.5.42"
+
+[dependencies.clap-verbosity-flag]
+default-features = false
+features         = ["tracing"]
+version          = "3.0.3"
+
+
 
 [build-dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"] }
