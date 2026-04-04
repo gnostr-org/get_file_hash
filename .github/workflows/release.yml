@@ -243,6 +243,7 @@ jobs:
   host:
     needs:
       - plan
+      - install-deps
       - build-local-artifacts
       - build-global-artifacts
     # Only run if we're "publishing", and only if plan, local and global didn't fail (skipped is fine)
@@ -310,6 +311,9 @@ jobs:
     needs:
       - plan
       - host
+      - install-deps
+      - build-local-artifacts
+      - build-global-artifacts
     runs-on: "ubuntu-22.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -355,6 +359,9 @@ jobs:
   announce:
     needs:
       - plan
+      - install-deps
+      - build-local-artifacts
+      - build-global-artifacts
       - host
       - publish-homebrew-formula
     # use "always() && ..." to allow us to wait for all publish jobs while
