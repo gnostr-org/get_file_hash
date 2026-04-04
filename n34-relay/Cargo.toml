@@ -110,6 +110,7 @@ dirs = "6.0.0"
 
 [build-dependencies]
 tonic-prost-build = "0.14.2"
+protobuf-src = "2.1.0"
 
 # [profile.release]
 # lto       = "fat"

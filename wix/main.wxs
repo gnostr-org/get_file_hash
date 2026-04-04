@@ -131,6 +131,22 @@
                         <Component Id='binary1' Guid='*'>
                             <File
                                 Id='exe1'
+                                Name='n34.exe'
+                                DiskId='1'
+                                Source='$(var.CargoTargetBinDir)\n34.exe'
+                                KeyPath='yes'/>
+                        </Component>
+                        <Component Id='binary2' Guid='*'>
+                            <File
+                                Id='exe2'
+                                Name='n34-relay.exe'
+                                DiskId='1'
+                                Source='$(var.CargoTargetBinDir)\n34-relay.exe'
+                                KeyPath='yes'/>
+                        </Component>
+                        <Component Id='binary3' Guid='*'>
+                            <File
+                                Id='exe3'
                                 Name='readme.exe'
                                 DiskId='1'
                                 Source='$(var.CargoTargetBinDir)\readme.exe'
@@ -159,6 +175,8 @@
 
             <ComponentRef Id='binary0'/>
             <ComponentRef Id='binary1'/>
+            <ComponentRef Id='binary2'/>
+            <ComponentRef Id='binary3'/>
 
             <Feature
                 Id='Environment'

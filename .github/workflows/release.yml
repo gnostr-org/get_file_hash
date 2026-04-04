@@ -47,7 +47,7 @@ on:
 jobs:
   # Run 'dist plan' (or host) to determine what tasks we need to do
   install-deps:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
       tag: ${{ !github.event.pull_request && github.ref_name || '' }}
@@ -61,19 +61,31 @@ jobs:
           persist-credentials: false
           submodules: recursive
       - name: Install-deps
-        # we specify bash to get pipefail; it guards against the `curl` command
-        # failing. otherwise `sh` won't catch that `curl` returned non-0
+        # We specify bash to get pipefail; it guards against the curl command
+        # failing. Otherwise sh won't catch that curl returned non-0.
+        # Bash is available on GitHub's Windows, macOS, and Linux runners.
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            sudo apt-get update && sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install protobuf
+
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Use Chocolatey to install protobuf on Windows
+            choco install protoc --no-progress
+            # Ensure the path is updated for the current shell session
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
           fi
+
+          # Verify installation
+          protoc --version
   plan:
     needs:
       - install-deps
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
       tag: ${{ !github.event.pull_request && github.ref_name || '' }}
@@ -166,6 +178,28 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Install-deps
+        # We specify bash to get pipefail; it guards against the curl command
+        # failing. Otherwise sh won't catch that curl returned non-0.
+        # Bash is available on GitHub's Windows, macOS, and Linux runners.
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf
+
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Use Chocolatey to install protobuf on Windows
+            choco install protoc --no-progress
+            # Ensure the path is updated for the current shell session
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
+          fi
+
+          # Verify installation
+          protoc --version
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
@@ -198,7 +232,7 @@ jobs:
       - plan
       - install-deps
       - build-local-artifacts
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: target/distrib/global-dist-manifest.json
@@ -213,6 +247,28 @@ jobs:
           name: cargo-dist-cache
           path: ~/.cargo/bin/
       - run: chmod +x ~/.cargo/bin/dist
+      - name: Install-deps
+        # We specify bash to get pipefail; it guards against the curl command
+        # failing. Otherwise sh won't catch that curl returned non-0.
+        # Bash is available on GitHub's Windows, macOS, and Linux runners.
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf
+
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Use Chocolatey to install protobuf on Windows
+            choco install protoc --no-progress
+            # Ensure the path is updated for the current shell session
+            echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
+          fi
+
+          # Verify installation
+          protoc --version
       # Get all the local artifacts for the global tasks to use (for e.g. checksums)
       - name: Fetch local artifacts
         uses: actions/download-artifact@v4
@@ -250,7 +306,7 @@ jobs:
     if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result == 'success') && (needs.build-local-artifacts.result == 'skipped' || needs.build-local-artifacts.result == 'success') }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     outputs:
       val: ${{ steps.host.outputs.manifest }}
     steps:
@@ -314,7 +370,7 @@ jobs:
       - install-deps
       - build-local-artifacts
       - build-global-artifacts
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PLAN: ${{ needs.plan.outputs.val }}
@@ -368,7 +424,7 @@ jobs:
     # still allowing individual publish jobs to skip themselves (for prereleases).
     # "host" however must run to completion, no skipping allowed!
     if: ${{ always() && needs.host.result == 'success' && (needs.publish-homebrew-formula.result == 'skipped' || needs.publish-homebrew-formula.result == 'success') }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
