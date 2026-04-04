@@ -82,6 +82,7 @@ tonic-prost        = "0.14.2"
 tower              = { version = "0.5.2", features = ["limit"] }
 tracing            = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+dirs = "6.0.0"
 
   # We frequently switch between stable and unstable versions; this will make the
   # process easier.

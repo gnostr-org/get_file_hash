@@ -14,48 +14,59 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://gnu.org/licenses/agpl-3.0>.
 
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
+use std::env;
 
-/// Name of the environment variable that can override the base directory
 const BASE_DIR_ENV_VAR: &str = "N34_RELAY_BASE_DIR";
 
-/// Default base directory path when no environment variable is set
-const DEFAULT_BASE_DIR: &str = "/etc/n34-relay";
+/// Returns the base directory for n34-relay.
+/// Priority:
+/// 1. Environment variable `N34_RELAY_BASE_DIR`
+/// 2. OS-specific config directory + `/n34-relay`
+/// 3. Fallback to current directory if config_dir is unavailable
+pub fn get_base_dir() -> PathBuf {
+    if let Ok(env_path) = env::var(BASE_DIR_ENV_VAR) {
+        return PathBuf::from(env_path);
+    }
 
-/// Gets the base directory path, using either the environment variable
-/// `N34_RELAY_BASE_DIR` if set, or falling back to the default `/etc/n34-relay`
-pub fn base_dir_path() -> PathBuf {
-    env::var(BASE_DIR_ENV_VAR)
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(DEFAULT_BASE_DIR))
+    // Linux:   /home/alice/.config/n34-relay
+    // macOS:   /Users/alice/Library/Application Support/n34-relay
+    // Windows: C:\Users\Alice\AppData\Roaming\n34-relay
+    dirs::config_dir()
+        .map(|path| path.join("n34-relay"))
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
-/// Path to the config file located at `<base_dir>/config.toml`.
-pub fn config_file_path() -> PathBuf {
+/// Alias for get_base_dir to fix E0425 errors in downstream functions
+pub fn base_dir_path() -> PathBuf {
+    get_base_dir()
+}
+
+/// Helper for the default config file path
+pub fn get_default_config_path() -> PathBuf {
     base_dir_path().join("config.toml")
 }
 
-/// Path to the LMDB directory within the base directory.
+pub fn config_file_path() -> PathBuf {
+    get_default_config_path()
+}
+
 pub fn lmdb_dir_path() -> PathBuf {
     base_dir_path().join("lmdb")
 }
 
-/// Path to the logs file
 pub fn logs_file_path() -> PathBuf {
     base_dir_path().join("logs.log")
 }
 
-/// Path to the html homepage file
 pub fn homepage_file_path() -> PathBuf {
     base_dir_path().join("homepage.html")
 }
 
-/// Path to rhai plugins directory
 pub fn rhai_plugins_dir() -> PathBuf {
     base_dir_path().join("rhai-plugins")
 }
 
-/// Path to GRASP repositories
 pub fn grasp_repos() -> PathBuf {
     base_dir_path().join("repos")
 }

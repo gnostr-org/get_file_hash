@@ -54,6 +54,16 @@ type ArcRwVec<T> = Arc<RwLock<Vec<T>>>;
 /// but should be included when serializing to JSON.
 pub static SERIALIZE_TO_TOML: AtomicBool = AtomicBool::new(false);
 
+pub fn load_config() {
+    let config_path = pathes::get_default_config_path();
+    
+    println!("Loading config from: {:?}", config_path);
+    
+    if !config_path.exists() {
+        // Implementation for creating default config...
+    }
+}
+
 /// Configuration for the relay network.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NetworkConfig {
