@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n34-relay | GRASP</title>
+    <style>
+        :root {
+            --primary-color: #1a2a6c;
+            --secondary-color: #b21f1f;
+            --text-color: white;
+            --footer-bg: rgba(0, 0, 0, 0.25);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(-45deg, var(--primary-color), var(--secondary-color), var(--primary-color));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-color);
+            overflow: hidden;
+            position: relative;
+            padding: 0;
+        }
+
+        .page-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            margin-bottom: clamp(0.8rem, 2vw, 1.5rem);
+            letter-spacing: -0.03em;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: clamp(1rem, 4vw, 2rem);
+            font-weight: 300;
+            opacity: 0.92;
+            max-width: 90%;
+            line-height: 1.4;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .footer {
+            position: relative;
+            width: 100%;
+            padding: 15px 20px;
+            z-index: 20;
+            background: var(--footer-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 20px;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px 12px 0 0;
+            margin-top: 20px;
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-item:hover {
+            opacity: 1;
+        }
+
+        .footer-divider {
+            width: 1px;
+            height: 60%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .source-link {
+            color: #a0d2ff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: pulse ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(var(--tx, 0), var(--ty, 0)) scale(1); opacity: 0.1; }
+            50% { transform: translate(var(--tx, 0), var(--ty, 0)) scale(1.5); opacity: 0.05; }
+        }
+
+        @media (max-width: 768px) {
+            h1 { letter-spacing: -0.02em; }
+            h2 { max-width: 100%; }
+            body { animation-duration: 20s; }
+            
+            .footer {
+                padding: 12px 15px;
+                font-size: 0.78rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2.2rem; }
+            body { padding: 15px; }
+            .particle { animation-duration: 6s !important; }
+            
+            .footer {
+                flex-direction: column;
+                gap: 6px;
+                padding: 10px 0;
+            }
+            
+            .footer-divider {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content">
+            <h1>n34-relay</h1>
+            <h2>A nostr GRASP relay implementation</h2>
+        </div>
+        
+        <div class="particles"></div>
+        
+        <footer class="footer">
+            <div class="footer-item">
+                <a href="https:&#47;&#47;git.4rs.nl/awiteb/n34-relay.git" class="source-link" target="_blank">
+                    Source Code
+                </a>
+            </div>
+            
+            <div class="footer-divider"></div>
+            
+            <div class="footer-item">
+                v{{VERSION}}
+            </div>
+            
+            <div class="footer-divider"></div>
+            
+            <div class="footer-item">
+                Protocols &gt; Platforms
+            </div>
+            
+            <div class="footer-divider"></div>
+            
+            <div class="footer-item">
+                Licensed under AGPLv3
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function createParticles() {
+            const particles = document.querySelector('.particles');
+            particles.innerHTML = '';
+            
+            const count = Math.floor(window.innerWidth / 30);
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * clamp(30, 80, window.innerWidth) + 15;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const duration = Math.random() * 7 + 3;
+                const tx = (Math.random() - 0.5) * 20;
+                const ty = (Math.random() - 0.5) * 20;
+                
+                particle.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${posX}%;
+                    top: ${posY}%;
+                    animation-duration: ${duration}s;
+                    --tx: ${tx}px;
+                    --ty: ${ty}px;
+                `;
+                
+                particles.appendChild(particle);
+            }
+        }
+        
+        function clamp(min, max, viewport, ratio = 0.01) {
+            const vw = Math.max(min, Math.min(max, viewport * ratio));
+            return vw;
+        }
+        
+        createParticles();
+        window.addEventListener('resize', createParticles);
+    </script>
+</body>
+</html>

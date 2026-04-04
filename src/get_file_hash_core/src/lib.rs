@@ -1,3 +1,5 @@
+#[cfg(feature = "nostr")]
+use serde_json::to_string;
 use std::process::Command;
 use std::path::PathBuf;
 #[cfg(feature = "nostr")]
@@ -33,8 +35,63 @@ pub const DEFAULT_GNOSTR_KEY: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e464
 pub const DEFAULT_PICTURE_URL: &str = "https://avatars.githubusercontent.com/u/135379339?s=400&u=11cb72cccbc2b13252867099546074c50caef1ae&v=4";
 pub const DEFAULT_BANNER_URL: &str = "https://raw.githubusercontent.com/gnostr-org/gnostr-icons/refs/heads/master/banner/1024x341.png";
 
+pub const EMPTY_BLOB_SHA1: &str = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
+pub const EMPTY_BLOB_SHA256: &str = "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813";
+pub const EMPTY_BLOB_PRIVATE_KEY_NSEC: &str = "nsec1guaq7npmaz5ndqdzvl3mr6d8mndprp2rdls5ram5jys2xqmjrqfsdzhrp6";
+
+pub const EMPTY_TREE_SHA1: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+pub const EMPTY_TREE_SHA256: &str = "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321";
+pub const EMPTY_TREE_PRIVATE_KEY_NSEC: &str = "nsec1dmceksfzt3fknuwpqn29mrv9a75mq4a48v2tfwde88whfhkv2vsslsc46c";
+
 #[cfg(feature = "nostr")]
 const ONLINE_RELAYS_GPS_CSV: &[u8] = include_bytes!("online_relays_gps.csv");
+
+/// BIP-64MOD + GCC: Complete NIP-19 Identity Mapping
+/// 
+/// These constants provide the Bech32 encoded Private (NSEC) and 
+/// Public (NPUB) keys for Git-standard empty states.
+#[cfg(feature = "nostr")]
+pub struct GitEmptyIdentity;
+
+#[cfg(feature = "nostr")]
+impl GitEmptyIdentity {
+    // === EMPTY BLOB IDENTITY ===
+    // Derived from the identity of a 0-byte file.
+    pub const BLOB_NSEC: &'static str = "nsec1guaq7npmaz5ndqdzvl3mr6d8mndprp2rdls5ram5jys2xqmjrqfsdzhrp6";
+    pub const BLOB_NPUB: &'static str = "npub180cvv07tjdrghvkyh6964p7w9vsqpf3p05868v399v86p8y6f69sq5fdp0";
+    pub const BLOB_HEX:  &'static str = "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813";
+
+    // === EMPTY TREE IDENTITY ===
+    // Derived from the identity of an empty directory.
+    pub const TREE_NSEC: &'static str = "nsec1dmceksfzt3fknuwpqn29mrv9a75mq4a48v2tfwde88whfhkv2vsslsc46c";
+    pub const TREE_NPUB: &'static str = "npub1pxmpep6yk7z6p332u9588k0vscg26rv29pynvscg26rv29pynvsq6erdfh";
+    pub const TREE_HEX:  &'static str = "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321";
+
+    // === NULL / GENESIS IDENTITY ===
+    // Often used for the 'System' or 'Root' user in a new GCC chain.
+    // Derived from 32-bytes of zeros.
+    pub const NULL_NSEC: &'static str = "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp3994m";
+    pub const NULL_NPUB: &'static str = "npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqad8gh8";
+    pub const NULL_HEX:  &'static str = "0000000000000000000000000000000000000000000000000000000000000000";
+}
+
+/// Example usage for signature verification logic
+#[cfg(feature = "nostr")]
+pub mod git_empty_state {
+    #[cfg(feature = "nostr")]
+	use crate::GitEmptyIdentity;
+
+    /// Returns the expected public key for a given Git object hash.
+    /// Useful for automated verification of 'Empty State' transitions.
+    pub fn get_expected_npub(git_hash: &str) -> Option<&'static str> {
+        match git_hash {
+            GitEmptyIdentity::BLOB_HEX => Some(GitEmptyIdentity::BLOB_NPUB),
+            GitEmptyIdentity::TREE_HEX => Some(GitEmptyIdentity::TREE_NPUB),
+            GitEmptyIdentity::NULL_HEX => Some(GitEmptyIdentity::NULL_NPUB),
+            _ => None,
+        }
+    }
+}
 
 #[cfg(feature = "nostr")]
 pub fn get_relay_urls() -> Vec<String> {
@@ -69,6 +126,180 @@ pub fn get_relay_urls() -> Vec<String> {
             }
         })
         .collect()
+}
+
+#[cfg(feature = "nostr")]
+use std::io::Write;
+#[cfg(feature = "nostr")]
+use std::fs;
+
+#[cfg(feature = "nostr")]
+pub fn should_remove_relay(error_msg: &str) -> bool {
+    error_msg.contains("relay not connected") ||
+    error_msg.contains("not in web of trust") ||
+    error_msg.contains("blocked: not authorized") ||
+    error_msg.contains("timeout") ||
+    error_msg.contains("blocked: spam not permitted") ||
+    error_msg.contains("relay experienced an error trying to publish the latest event") ||
+    error_msg.contains("duplicate: event already broadcast")
+}
+
+#[cfg(feature = "nostr")]
+pub fn write_event_json_to_file(
+    output_dir: &PathBuf,
+    filename: &str,
+    event: &Event,
+) -> Option<()> {
+    let file_path = output_dir.join(filename);
+    if let Some(parent) = file_path.parent() {
+        if let Err(e) = fs::create_dir_all(parent) {
+            println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
+            return None;
+        }
+    }
+    if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
+        println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+        None
+    } else {
+        println!("Successfully wrote event JSON to {}", file_path.display());
+        Some(())
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_nostr_event_if_release(
+    client: &mut nostr_sdk::Client,
+    hash: String,
+    keys: Keys,
+    event_builder: EventBuilder,
+    _relay_urls: &mut Vec<String>,
+    file_path_str: &str,
+    output_dir: &PathBuf,
+    total_bytes_sent: &mut usize,
+) -> Option<EventId> {
+    let public_key = keys.public_key().to_string();
+
+    let event = client.sign_event_builder(event_builder).await.unwrap();
+
+    match client.send_event(&event).await {        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
+
+            let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
+            // Print successful relays
+            for relay_url in event_output.success.iter() {
+                println!("cargo:warning=Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
+                *total_bytes_sent += event_json_size;
+            }
+            // Print failed relays and remove "unfriendly" relays from the list
+            for (relay_url, error_msg) in event_output.failed.iter() {
+                if should_remove_relay(error_msg) {
+                    if let Err(e) = client.remove_relay(relay_url).await {
+                        println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
+                    }
+                     // println!("cargo:warning=Removed relay {}", relay_url);
+                }
+            }
+
+            let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
+            write_event_json_to_file(output_dir, &filename, &event);
+            Some(event_output.val)
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
+            None
+        },
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn get_repo_announcement_event(
+    client: &mut nostr_sdk::Client,
+    _keys: &Keys,
+    relay_urls: &Vec<String>,
+    repo_url: &str,
+    repo_name: &str,
+    repo_description: &str,
+    git_commit_hash: &str,
+    git_branch: &str,
+    output_dir: &PathBuf,
+    public_key_hex: &str,
+) -> Option<EventId> {
+
+    let mut tags = vec![
+        Tag::parse(["d", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["name", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["web", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["clone", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["r", git_commit_hash, "euc"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["maintainers", "gnostr"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        //Tag::parse(["t", "personal-fork"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["t", "gnostr"].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["t", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+    ];
+
+    // Append each relay url
+    for relay in relay_urls {
+        tags.push(Tag::parse(["relays", relay].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap());
+    }
+    let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
+    let event = client.sign_event_builder(event_builder).await.unwrap();
+
+    match client.send_event(&event).await {
+        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            write_event_json_to_file(output_dir, &filename, &event);
+            Some(event_output.val)
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            None
+        },
+    }
+}
+
+#[cfg(feature = "nostr")]
+pub async fn publish_repo_patch_event(
+    client: &mut nostr_sdk::Client,
+    _keys: &Keys,
+    _relay_urls: &Vec<String>,
+    repo_url: &str,
+    repo_name: &str,
+    repo_description: &str,
+    git_commit_hash: &str,
+    git_branch: &str,
+    output_dir: &PathBuf,
+    public_key_hex: &str,
+) -> Option<EventId> {
+
+    let tags = vec![
+        Tag::parse(["r", repo_url].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["name", repo_name].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["description", repo_description].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["commit", git_commit_hash].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+        Tag::parse(["branch", git_branch].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+    ];
+
+    let event_builder = EventBuilder::new(Kind::Custom(1617), repo_description).tags(tags);
+    let event = client.sign_event_builder(event_builder).await.unwrap();
+
+    match client.send_event(&event).await {
+        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            write_event_json_to_file(output_dir, &filename, &event);
+            Some(event_output.val)
+        },
+        Err(e) => {
+            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            None
+        },
+    }
 }
 
 /// Computes the SHA-256 hash of the specified file at compile time.
@@ -627,7 +858,7 @@ pub async fn publish_patch_event(
 
     match client.send_event_builder(event_builder).await {
         Ok(event_id) => {
-            println!("cargo:warning=Published NIP-34 Patch event for commit {}. Event ID (raw): {:?}, Event ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
+            println!("cargo:warning=\nPublished NIP-34 Patch event for commit {}.\nEvent ID (raw): {:?},\nEvent ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
@@ -670,7 +901,7 @@ pub async fn publish_pull_request_event(
 
     let event_builder = EventBuilder::new(
         Kind::Custom(1618), // NIP-34 Pull Request kind
-        "", // Content can be empty or a description for the PR
+        "gnostr patch", // Content can be empty or a description for the PR
     ).tags(tags);
 
     match client.send_event_builder(event_builder).await {
@@ -867,9 +1098,10 @@ pub fn generate_frost_keys(
     }
 #[cfg(test)]
 mod tests {
-	use serial_test::serial;
-
-	use std::collections::BTreeMap;
+    #[cfg(feature = "nostr")]
+    use serial_test::serial;
+    #[cfg(feature = "nostr")]
+    use std::collections::BTreeMap;
     use std::fs::File;
     use std::io::Write;
     use sha2::{Digest, Sha256};
@@ -1051,7 +1283,7 @@ mod tests {
     #[cfg(feature = "nostr")]
     #[tokio::test]
     async fn test_publish_patch_event_tr() {
-        use super::get_relay_urls;
+        use super::{get_relay_urls, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL};
         use nostr_sdk::Keys;
 
         let keys = Keys::parse(super::DEFAULT_GNOSTR_KEY).expect("Failed to create Nostr Keys from DEFAULT_GNOSTR_KEY");
@@ -1064,8 +1296,8 @@ mod tests {
         super::publish_metadata_event(
             &keys,
             &relay_urls,
-            "https://example.com/test_patch_picture.jpg",
-            "https://example.com/test_patch_banner.jpg",
+            DEFAULT_PICTURE_URL,
+            DEFAULT_BANNER_URL,
             "test_publish_patch_event_metadata",
         ).await;
 

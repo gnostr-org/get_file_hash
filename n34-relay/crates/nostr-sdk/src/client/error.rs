@@ -1,0 +1,112 @@
+// Copyright (c) 2022-2023 Yuki Kishimoto
+// Copyright (c) 2023-2025 Rust Nostr Developers
+// Distributed under the MIT software license
+
+use std::fmt;
+
+use nostr::prelude::*;
+use nostr::serde_json;
+use nostr_database::prelude::*;
+use nostr_gossip::error::GossipError;
+
+use crate::{pool, relay};
+
+/// Client error
+#[derive(Debug)]
+pub enum Error {
+    /// Relay error
+    Relay(relay::Error),
+    /// Relay Pool error
+    RelayPool(pool::Error),
+    /// Relay URL error
+    RelayUrl(url::Error),
+    /// Database error
+    Database(DatabaseError),
+    /// Signer error
+    Signer(SignerError),
+    /// Gossip error
+    Gossip(GossipError),
+    /// [`EventBuilder`] error
+    EventBuilder(event::builder::Error),
+    /// Json error
+    Json(serde_json::Error),
+    /// Signer not configured
+    SignerNotConfigured,
+    /// Gossip is not configured
+    GossipNotConfigured,
+    /// Broken down filters for gossip are empty
+    GossipFiltersEmpty,
+    /// Private message (NIP17) relays not found
+    PrivateMsgRelaysNotFound,
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Relay(e) => e.fmt(f),
+            Self::RelayPool(e) => e.fmt(f),
+            Self::RelayUrl(e) => e.fmt(f),
+            Self::Database(e) => e.fmt(f),
+            Self::Signer(e) => e.fmt(f),
+            Self::Gossip(e) => e.fmt(f),
+            Self::EventBuilder(e) => e.fmt(f),
+            Self::Json(e) => e.fmt(f),
+            Self::SignerNotConfigured => f.write_str("signer not configured"),
+            Self::GossipNotConfigured => f.write_str("gossip not configured"),
+            Self::GossipFiltersEmpty => {
+                f.write_str("gossip broken down filters are empty")
+            }
+            Self::PrivateMsgRelaysNotFound => f.write_str("Private message relays not found. The user is not ready to receive private messages."),
+        }
+    }
+}
+
+impl From<relay::Error> for Error {
+    fn from(e: relay::Error) -> Self {
+        Self::Relay(e)
+    }
+}
+
+impl From<pool::Error> for Error {
+    fn from(e: pool::Error) -> Self {
+        Self::RelayPool(e)
+    }
+}
+
+impl From<url::Error> for Error {
+    fn from(e: url::Error) -> Self {
+        Self::RelayUrl(e)
+    }
+}
+
+impl From<DatabaseError> for Error {
+    fn from(e: DatabaseError) -> Self {
+        Self::Database(e)
+    }
+}
+
+impl From<SignerError> for Error {
+    fn from(e: SignerError) -> Self {
+        Self::Signer(e)
+    }
+}
+
+impl From<GossipError> for Error {
+    fn from(e: GossipError) -> Self {
+        Self::Gossip(e)
+    }
+}
+
+impl From<event::builder::Error> for Error {
+    fn from(e: event::builder::Error) -> Self {
+        Self::EventBuilder(e)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Self {
+        Self::Json(e)
+    }
+}

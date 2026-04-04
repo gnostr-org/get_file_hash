@@ -1,8 +1,8 @@
 [workspace]
-members = [".", "src/get_file_hash_core"]
+members = [".", "src/get_file_hash_core", "n34", "n34-relay"]
 
 [workspace.package]
-version = "0.3.3"
+version = "0.3.3+n34"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -29,9 +29,11 @@ eula = false
 
 [features]
 nostr = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
+frost = ["dep:nostr", "dep:nostr-sdk", "dep:hex"]
 
 [workspace.dependencies]
 get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.3.3" }
+rand_chacha = "0.3"
 sha2 = "0.11.0"
 nostr = "0.44.2"
 nostr-sdk = "0.44.0"
@@ -46,6 +48,8 @@ rand = "0.8"
 frost-secp256k1-tr = "3.0.0-rc.0"
 serial_test = { version = "3.4.0", features = ["test_logging"] }
 log = "0.4"
+n34 = { version = "0.4.0", path = "n34" }
+n34-relay = { version = "0.1.0", path = "n34-relay" }
 
 [dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"]  }
@@ -56,7 +60,10 @@ hex = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["full"] }
 frost-secp256k1-tr = { workspace = true }
 rand = { workspace = true }
-serde_json.workspace = true
+serde_json = { workspace = true }
+rand_chacha = { workspace = true }
+n34 = { workspace = true }
+n34-relay = { workspace = true }
 
 [build-dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"] }
@@ -74,3 +81,8 @@ lto = "thin"
 
 [dev-dependencies]
 serial_test = { workspace = true }
+
+[[example]]
+name = "gnostr-build"
+path = "examples/gnostr-build.rs"
+required-features = ["nostr"]

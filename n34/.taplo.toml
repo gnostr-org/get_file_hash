@@ -1,0 +1,11 @@
+exclude = ["target/**/*.toml", "Cargo.lock"]
+
+[formatting]
+align_entries = true
+indent_tables = true
+reorder_keys  = false
+
+[[rule]]
+include                 = ["**/Cargo.toml"]
+keys                    = ["dependencies"]
+formatting.reorder_keys = true

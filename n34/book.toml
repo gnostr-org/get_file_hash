@@ -1,0 +1,10 @@
+[book]
+authors      = ["Awiteb"]
+language     = "en"
+multilingual = false
+src          = "docs"
+title        = "n34 documentation"
+
+[output.html]
+git-repository-icon = "fa-git"
+git-repository-url  = "https://git.4rs.nl/awiteb/n34.git"

@@ -1,0 +1,15 @@
+# This file contains NIP-19 `naddr` entities for repositories that accept this
+# project's issues and patches.
+#
+# The file acts as a **read-only reference** for retrieving repository relays
+# when embedded in an `naddr` and mentions those repositories when opening
+# patches or issues. Modifications here will not affect in the relays, as the
+# file is **explicitly untracked**. Its goal is to simplify contributions by
+# removing the need for manual address entry.
+#
+# Each entry must start with "naddr". Embedded relays are **strongly recommended**
+# to assist client-side discovery.
+#
+# Empty lines are ignored. Lines starting with "#" are treated as comments.
+
+naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqaueqyf8wumn8ghj7mn0wd68yt35wfejumnvqyt8wumn8ghj7un9d3shjtnswf5k6ctv9ehx2aqpp4mhxue69uhkummn9ekx7mqppamhxue69uhkummnw3ezumt0d5q3gamnwvaz7tmjv4kxz7fwv3sk6atn9e5k7qg5waehxw309ahx7um5wghx77r5wghxgetkxpx8xj

@@ -1,0 +1,121 @@
+// This protobuf contract defines the interface for managing and interacting
+// with plugins in a server.
+//
+// Plugins can be of two types: `WRITE` (for processing events) or `QUERY` (for
+// processing filters). Each plugin has a priority level (`ALL` or `ANY`) that
+// determines its execution behavior:
+// - `ALL`: The plugin must process the event/query.
+// - `ANY`: The plugin can skip processing if another plugin accepts the
+// event/query.
+
+syntax = "proto3";
+package plugins;
+
+// Empty rpc request.
+message Empty {}
+
+// Represents the type of plugin, either for writing or querying.
+enum PluginType {
+  WRITE = 0;
+  QUERY = 1;
+}
+
+// Defines the priority level for plugin event/query handling.
+//
+// `ALL` ensures the plugin must process the event/query.
+// `ANY` allows the plugin to skip processing if another plugin accepts the
+// event.
+enum PluginPriority {
+  // It must accept the event
+  ALL = 0;
+  // Plugins with this priority can skip processing if another plugin accepts
+  // the event. Commonly used for whitelisting purposes.
+  ANY = 1;
+}
+
+// Information about a plugin.
+message PluginInfo {
+  // Unique name used to identify and call the plugin.
+  string name = 1;
+  // Type of plugin indicating when it should be executed.
+  PluginType plugin_type = 2;
+  // Priority level determining plugin execution order.
+  PluginPriority priority = 3;
+}
+
+// Event tag `["p", "<pubkey>", "<relay-url>"]`
+message Tag {
+  // Tag kind. e.g. "p"
+  string tag_kind = 1;
+  // Tag values. e.g. `["<pubkey>", "<relay-url>"]`
+  repeated string values = 2;
+}
+
+// Query filter
+message Filter {
+  repeated string ids = 1;
+  repeated string authors = 2;
+  repeated uint32 kinds = 3;
+  repeated Tag tags = 4;
+  optional uint64 since = 5;
+  optional uint64 until = 6;
+  optional uint64 limit = 7;
+}
+
+// Nostr event
+message Event {
+  // Event id
+  string id = 1;
+  // Author's public key. In hex
+  string public_key = 2;
+  // Event created at
+  uint64 created_at = 3;
+  // Event kind
+  uint32 kind = 4;
+  // Event tags
+  repeated Tag tags = 5;
+  // Event content
+  string content = 6;
+  // Event signature
+  string signature = 7;
+}
+
+// Represents the plugins available on the server.
+message ServicePlugins { repeated PluginInfo plugins = 1; }
+
+// Represents a request to a plugin, where the plugin type determines the
+// content. Query plugins receive a filter, while write plugins receive an event.
+message PluginRequest {
+  // The plugin that should be run.
+  string plugin_name = 1;
+  // The plugin request, which must contain either a filter for query plugins or
+  // an event for write plugins.
+  oneof plugin_request_body {
+    // A filter request sent to query-type plugins.
+    Filter filter = 2;
+    // An event request sent to write-type plugins.
+    Event event = 3;
+  }
+}
+
+// Represents a response from a plugin, indicating whether an event or query is
+// accepted or rejected.
+//
+// If the plugin accepts the event or query, `accept` is used without additional data.
+// If the plugin rejects it, `reject_msg` contains the reason for the rejection.
+message PluginResponse {
+  // Indicates whether the event or query is accepted or rejected.
+  oneof plugin_response_body {
+    // Indicates that the event or query is accepted.
+    Empty accept = 1;
+    // Provides the reason for rejecting the event or query.
+    string reject_msg = 2;
+  }
+}
+
+service PluginsService {
+  // Returns the service plugins
+  rpc GetPlugins(Empty) returns (ServicePlugins);
+  // Run a plugin
+  rpc RunPlugin(PluginRequest) returns (PluginResponse);
+}

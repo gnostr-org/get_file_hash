@@ -1,5 +1,7 @@
-#[tokio::main]
 #[cfg(feature = "nostr")]
+use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, publish_nostr_event_if_release, get_repo_announcement_event, publish_patch_event};
+#[cfg(feature = "nostr")]
+#[tokio::main]
 async fn main() {
     use get_file_hash_core::publish_patch;
     use nostr_sdk::Keys;

@@ -1,0 +1,37 @@
+domain = ""
+nip42 = false
+min_pow = 0
+max_event_size = 153600
+max_limit = 5000
+default_limit = 500
+max_subid_length = 150
+whitelist = []
+blacklist = []
+admins = []
+allowed_kinds = []
+disallowed_kinds = []
+
+[net]
+ip = "127.0.0.1"
+port = 3598
+
+[lmdb]
+dir = "./lmdb"
+map_size = 34359738368
+max_readers = 126
+additional_dbs = 0
+
+[ratelimit]
+max_queries = 500
+events_per_minute = 120
+
+[nip11.limitation]
+payment_required = false
+
+[plugins.rhai]
+workers = 3
+plugins = []
+
+[grasp]
+enable = true
+git_path = "git"
