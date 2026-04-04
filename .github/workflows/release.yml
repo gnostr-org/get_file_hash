@@ -39,13 +39,14 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
+  pull_request:
   push:
     tags:
-      - "**[0-9]+.[0-9]+.[0-9]+*"
+      - '**[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
   # Run 'dist plan' (or host) to determine what tasks we need to do
-  plan:
+  install-deps:
     runs-on: "ubuntu-22.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
@@ -59,31 +60,32 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: install-system-deps-dbus
-        if: runner.os == 'Linux'
+      - name: Install-deps
+        # we specify bash to get pipefail; it guards against the `curl` command
+        # failing. otherwise `sh` won't catch that `curl` returned non-0
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libdbus-1-dev
-      - name: install-protobuf-protoc
-        needs:
-          - install-system-deps-dbus
-        shell: bash
-        run: |
-          set -euxo pipefail
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            brew update
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y pkg-config libdbus-1-dev protobuf-compiler
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install protobuf
-          elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y protobuf-compiler
-          elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            choco install -y protoc
           fi
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+  plan:
+    needs:
+      - install-deps
+    runs-on: "ubuntu-22.04"
+    outputs:
+      val: ${{ steps.plan.outputs.manifest }}
+      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
+      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
+      publishing: ${{ !github.event.pull_request }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -100,8 +102,6 @@ jobs:
       # (PRs run on the *source* but secrets are usually on the *target* -- that's *good*
       # but also really annoying to build CI around when it needs secrets to work right.)
       - id: plan
-        needs:
-          - install-protobuf-protoc
         run: |
           dist ${{ (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
           echo "dist ran successfully"
@@ -146,10 +146,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |
@@ -202,16 +198,13 @@ jobs:
       - build-local-artifacts
     runs-on: "ubuntu-22.04"
     env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: target/distrib/global-dist-manifest.json
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
@@ -262,10 +255,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      #- name: Install sccache
-      #  run: |
-      #    cargo install sccache --version 0.4.0 --locked
-      #    echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install cached dist
         uses: actions/download-artifact@v4
         with:
@@ -359,7 +348,7 @@ jobs:
             git add "Formula/${filename}"
             git commit -m "${name} ${version}"
           done
-          git push origin HEAD
+          git push
 
   announce:
     needs:

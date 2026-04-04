@@ -6,12 +6,20 @@ edition      = "2024"
 license      = "AGPL-3.0-or-later"
 authors      = ["Awiteb <a@4rs.nl>"]
 readme       = "README.md"
-repository   = "https://git.4rs.nl/awiteb/n34-relay.git"
+repository   = "https://github.com/gnostr-org/get_file_hash.git"
+documentation = "https://relay.n34.dev/docs.html"
+homepage      = "https://relay.n34.dev"
 keywords     = ["nostr", "NIP-34", "GRASP"]
 rust-version = "1.88.0"
 
-# documentation = "https://relay.n34.dev/docs.html"
-# homepage      = "https://relay.n34.dev"
+[package.metadata.wix]
+upgrade-guid = "036A2A4F-DA54-4FE2-B2D8-8C58D5814874"
+path-guid = "97D3207D-71DB-4DD0-B548-E43E8C664B7D"
+license = false
+eula = false
+
+documentation = "https://relay.n34.dev/docs.html"
+homepage      = "https://relay.n34.dev"
 
 [[bin]]
 name = "n34-relay"

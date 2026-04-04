@@ -8,10 +8,16 @@ authors       = ["Awiteb <a@4rs.nl>"]
 readme        = "README.md"
 documentation = "https://n34.dev/commands.html"
 homepage      = "https://n34.dev"
-repository    = "https://git.4rs.nl/awiteb/n34.git"
+repository    = "https://github.com/gnostr-org/get_file_hash.git"
 keywords      = ["nostr", "NIP-34", "CLI"]
 categories    = ["command-line-utilities"]
 rust-version  = "1.88.0"
+
+[package.metadata.wix]
+upgrade-guid = "5E8926D0-4A18-48E9-A070-AFB0F698F04C"
+path-guid = "7A2E5F6A-FC23-498B-AEC1-5FA63678FBFD"
+license = false
+eula = false
 
 [[bin]]
 name = "n34"
