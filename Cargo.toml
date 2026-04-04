@@ -185,6 +185,7 @@ tokio = { workspace = true, features = ["full"] }
 nostr = { workspace = true }
 nostr-sdk = { workspace = true }
 hex = { workspace = true }
+tonic-prost-build = "0.14.2"
 
 # The profile that 'dist' will build with
 [profile.dist]
