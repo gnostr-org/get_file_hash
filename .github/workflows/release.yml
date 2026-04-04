@@ -119,6 +119,7 @@ jobs:
     # Let the initial task tell us to not run (currently very blunt)
     needs:
       - plan
+      - install-deps
     if: ${{ fromJson(needs.plan.outputs.val).ci.github.artifacts_matrix.include != null && (needs.plan.outputs.publishing == 'true' || fromJson(needs.plan.outputs.val).ci.github.pr_run_mode == 'upload') }}
     strategy:
       fail-fast: false
@@ -195,6 +196,7 @@ jobs:
   build-global-artifacts:
     needs:
       - plan
+      - install-deps
       - build-local-artifacts
     runs-on: "ubuntu-22.04"
     env:
