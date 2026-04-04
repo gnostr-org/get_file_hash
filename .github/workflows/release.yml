@@ -59,13 +59,15 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-      - name: Install system deps (dbus)
+      - name: install-system-deps-dbus
         if: runner.os == 'Linux'
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libdbus-1-dev
-      - name: Install protobuf (protoc)
+      - name: install-protobuf-protoc
+        needs:
+          - install-system-deps-dbus
         shell: bash
         run: |
           set -euxo pipefail
@@ -98,6 +100,8 @@ jobs:
       # (PRs run on the *source* but secrets are usually on the *target* -- that's *good*
       # but also really annoying to build CI around when it needs secrets to work right.)
       - id: plan
+        needs:
+          - install-protobuf-protoc
         run: |
           dist ${{ (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
           echo "dist ran successfully"
