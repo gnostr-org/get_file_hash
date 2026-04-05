@@ -16,10 +16,10 @@
 
 /// Command line interface module
 use n34::cli;
-/// N34 errors
-use n34::error;
-/// Nostr utils module
-use n34::nostr_utils;
+// /// N34 errors
+// use n34::error;
+// /// Nostr utils module
+// use n34::nostr_utils;
 
 use std::{
     process::ExitCode,

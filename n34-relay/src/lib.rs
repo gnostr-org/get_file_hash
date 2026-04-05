@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://gnu.org/licenses/agpl-3.0>.
 
-use std::{net::SocketAddr, process::ExitCode, sync::Arc};
+use std::{net::SocketAddr, /*process::ExitCode, */sync::Arc};
 
 use axum::Extension;
 use hyper::{Method, header};
@@ -54,7 +54,7 @@ use self::{errors::RelayResult, relay_config::RelayConfig, router_state::RouterS
 ///
 /// Log level for stderr is controlled by `RUST_LOG` environment variable,
 /// defaults to `ERROR`. The log file always uses `TRACE` level.
-fn setup_logs() -> errors::RelayResult<()> {
+pub fn setup_logs() -> errors::RelayResult<()> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::registry()
             .with(
@@ -78,7 +78,7 @@ fn setup_logs() -> errors::RelayResult<()> {
     Ok(())
 }
 
-async fn shutdown_signal() {
+pub async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -104,7 +104,7 @@ async fn shutdown_signal() {
     }
 }
 
-async fn try_main() -> RelayResult<()> {
+pub async fn try_main() -> RelayResult<()> {
     setup_logs()?;
     let config = Arc::new(RelayConfig::reload()?);
     let relay_db = config.get_relay_db().await?;
@@ -153,13 +153,13 @@ async fn try_main() -> RelayResult<()> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
-    if let Err(err) = try_main().await {
-        eprintln!("{err}");
-        return ExitCode::FAILURE;
-    }
-
-    tracing::info!("Exited gracefully without any errors");
-    ExitCode::SUCCESS
-}
+// #[tokio::main]
+// async fn main() -> ExitCode {
+//     if let Err(err) = try_main().await {
+//         eprintln!("{err}");
+//         return ExitCode::FAILURE;
+//     }
+// 
+//     tracing::info!("Exited gracefully without any errors");
+//     ExitCode::SUCCESS
+// }

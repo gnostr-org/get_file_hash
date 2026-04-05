@@ -82,6 +82,7 @@ macro_rules! git_router {
 }
 
 /// Creates a router for git-related endpoints
+#[allow(deprecated)]
 pub fn router(config: &RelayConfig) -> Router {
     let mut router = git_router!(
         "/git-upload-pack" => post(upload_pack)

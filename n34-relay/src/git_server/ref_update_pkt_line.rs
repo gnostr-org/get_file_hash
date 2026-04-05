@@ -21,7 +21,7 @@ const NULL_OID: &str = "0000000000000000000000000000000000000000";
 
 /// Represents a ref update pkt-line in a Git protocol.
 #[derive(Debug)]
-pub(crate) struct RefUpdatePkt<'a> {
+pub struct RefUpdatePkt<'a> {
     /// The old commit hash (before the update).
     pub old_commit:   &'a str,
     /// The new commit hash (after the update).
