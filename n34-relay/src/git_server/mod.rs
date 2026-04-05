@@ -61,11 +61,13 @@ const CACHE_CONTROL_NO_CACHE: HeaderValue =
 /// # Example
 /// ```rust
 /// use axum::routing::get;
+/// use axum::Router;
+/// use n34_relay::git_router;
 ///
 /// # fn main() {
-/// let router = git_router!(
-///     "/git-upload-pack" => get(|| async {})
-///     "/git-receive-pack" => get(|| async {})
+/// let router: Router<()> = git_router!(
+///     "/git-upload-pack" => get::<_, ((),), ()>(|| async {})
+///     "/git-receive-pack" => get::<_, ((),), ()>(|| async {})
 /// );
 /// # }
 /// ```
