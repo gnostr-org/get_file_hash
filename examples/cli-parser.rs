@@ -1,23 +1,44 @@
+/// Usage: cargo run --example cli-parser --features nostr
+#[cfg(not(feature = "nostr"))]
+fn main() {
+    println!("Run with --features nostr to enable this example.");
+}
+#[cfg(feature = "nostr")]
 use clap::{Parser, Subcommand};
+#[cfg(feature = "nostr")]
 use frost_secp256k1_tr as frost;
+#[cfg(feature = "nostr")]
 use frost::round1::{self, SigningCommitments, SigningNonces};
+#[cfg(feature = "nostr")]
 use frost::keys::IdentifierList;
+#[cfg(feature = "nostr")]
 use rand_chacha::ChaCha20Rng;
+#[cfg(feature = "nostr")]
 use rand::SeedableRng;
+#[cfg(feature = "nostr")]
 use std::fs;
+#[cfg(feature = "nostr")]
 use std::path::PathBuf;
+#[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
+#[cfg(feature = "nostr")]
 #[derive(Parser)]
+#[cfg(feature = "nostr")]
 #[command(name = "gnostr-frost")]
+#[cfg(feature = "nostr")]
 #[command(version = "0.1.0")]
+#[cfg(feature = "nostr")]
 #[command(about = "BIP-64MOD + GCC Threshold Signature Tool", long_about = None)]
+#[cfg(feature = "nostr")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
 
+#[cfg(feature = "nostr")]
 #[derive(Subcommand)]
+#[cfg(feature = "nostr")]
 enum Commands {
     /// Step 1: Generate a new T-of-N key set (Dealer Mode)
     Keygen {
@@ -64,9 +85,12 @@ enum Commands {
     },
 }
 
+#[cfg(feature = "nostr")]
 type NonceMap = BTreeMap<u32, SigningNonces>;
+#[cfg(feature = "nostr")]
 type CommitmentMap = BTreeMap<u32, SigningCommitments>;
 
+#[cfg(feature = "nostr")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
