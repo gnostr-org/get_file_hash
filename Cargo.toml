@@ -36,7 +36,7 @@ gen-protos = []
 get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.4.7" }
 rand_chacha = "0.3"
 sha2 = "0.11.0"
-nostr = { version = "0.44.2", features = ["std", "nip46"] }
+nostr = { version = "0.44.2", features = ["std", "nip46", "nip96"] }
 nostr-sdk = { version = "0.44.0", default-features = false, features = ["default"] }
 hex = "0.4.2"
 tokio = "1"
@@ -201,4 +201,9 @@ serial_test = { workspace = true }
 [[example]]
 name = "gnostr-build"
 path = "examples/gnostr-build.rs"
+required-features = ["nostr"]
+
+[[example]]
+name = "screenshot"
+path = "examples/screenshot.rs"
 required-features = ["nostr"]
