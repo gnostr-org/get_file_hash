@@ -4,9 +4,11 @@ use get_file_hash_core::get_file_hash;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use get_file_hash_core::{get_git_tracked_files, DEFAULT_GNOSTR_KEY, DEFAULT_PICTURE_URL, DEFAULT_BANNER_URL, publish_nostr_event_if_release, get_repo_announcement_event};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
-use nostr_sdk::{EventBuilder, Keys, Tag, SecretKey};
+use nostr_sdk::{EventBuilder, EventId, Keys, Tag, SecretKey};
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::fs;
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use std::path::PathBuf;
 use sha2::{Digest, Sha256};
@@ -147,47 +149,82 @@ async fn main() {
         println!("cargo:warning=Added and connected to {} relays.", relay_urls.len());
 
         let mut published_event_ids: Vec<Tag> = Vec::new();
-        let mut total_bytes_sent: usize = 0;
-    
+        let total_bytes_sent = AtomicUsize::new(0);
+        let mut file_handles: Vec<tokio::task::JoinHandle<(Option<EventId>, usize)>> = Vec::new();
+
         for file_path_str in &files_to_publish {
-            println!("cargo:warning=Processing file: {}", file_path_str);
-            match fs::read(file_path_str) {
-                Ok(bytes) => {
-                    let mut hasher = Sha256::new();
-                    hasher.update(&bytes);
-                    let result = hasher.finalize();
-                    let file_hash_hex = hex::encode(result);
+            let file_path_str = file_path_str.clone();
+            let output_dir = output_dir.clone();
+            let package_version = package_version.clone();
+            let mut relay_urls = relay_urls.clone();
+            let mut client = client.clone();
 
-                    match SecretKey::from_hex(&file_hash_hex.clone()) {
-                        Ok(secret_key) => {
-                            let keys = Keys::new(secret_key);
-                            let content = String::from_utf8_lossy(&bytes).into_owned();
-                            let tags = vec![
-                                Tag::parse(["file", file_path_str].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-                                Tag::parse(["version", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
-                            ];
-                            let event_builder = EventBuilder::text_note(content).tags(tags);
+            file_handles.push(tokio::spawn(async move {
+                let mut task_bytes_sent: usize = 0;
+                println!("cargo:warning=Processing file: {}", file_path_str);
+                match fs::read(&file_path_str) {
+                    Ok(bytes) => {
+                        let mut hasher = Sha256::new();
+                        hasher.update(&bytes);
+                        let result = hasher.finalize();
+                        let file_hash_hex = hex::encode(result);
 
-                            if let Some(event_id) = publish_nostr_event_if_release(&mut client, file_hash_hex, keys.clone(), event_builder, &mut relay_urls, file_path_str, &output_dir, &mut total_bytes_sent).await {
-                                published_event_ids.push(Tag::event(event_id));
+                        match SecretKey::from_hex(&file_hash_hex.clone()) {
+                            Ok(secret_key) => {
+                                let keys = Keys::new(secret_key);
+                                let content = String::from_utf8_lossy(&bytes).into_owned();
+                                let tags = vec![
+                                    Tag::parse(["file", &file_path_str].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                                    Tag::parse(["version", &package_version].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap(),
+                                ];
+                                let event_builder = EventBuilder::text_note(content).tags(tags);
+
+                                let event_id = publish_nostr_event_if_release(
+                                    &mut client,
+                                    file_hash_hex,
+                                    keys.clone(),
+                                    event_builder,
+                                    &mut relay_urls,
+                                    &file_path_str,
+                                    &output_dir,
+                                    &mut task_bytes_sent,
+                                ).await;
+
+                                // Publish metadata event
+                                get_file_hash_core::publish_metadata_event(
+                                    &keys,
+                                    &relay_urls,
+                                    DEFAULT_PICTURE_URL,
+                                    DEFAULT_BANNER_URL,
+                                    &file_path_str,
+                                ).await;
+
+                                (event_id, task_bytes_sent)
                             }
-
-                            // Publish metadata event
-                            get_file_hash_core::publish_metadata_event(
-                                &keys,
-                                &relay_urls,
-                                DEFAULT_PICTURE_URL,
-                                DEFAULT_BANNER_URL,
-                                file_path_str,
-                            ).await;
-                        }
-                        Err(e) => {
-                            println!("cargo:warning=Failed to derive Nostr secret key for {}: {}", file_path_str, e);
+                            Err(e) => {
+                                println!("cargo:warning=Failed to derive Nostr secret key for {}: {}", file_path_str, e);
+                                (None, task_bytes_sent)
+                            }
                         }
                     }
+                    Err(e) => {
+                        println!("cargo:warning=Failed to read file {}: {}", file_path_str, e);
+                        (None, task_bytes_sent)
+                    }
+                }
+            }));
+        }
+
+        for handle in file_handles {
+            match handle.await {
+                Ok((maybe_event_id, bytes_sent)) => {
+                    if let Some(event_id) = maybe_event_id {
+                        published_event_ids.push(Tag::event(event_id));
+                    }
+                    total_bytes_sent.fetch_add(bytes_sent, Ordering::Relaxed);
                 }
                 Err(e) => {
-                    println!("cargo:warning=Failed to read file {}: {}", file_path_str, e);
+                    println!("cargo:warning=File processing task panicked: {}", e);
                 }
             }
         }
@@ -209,6 +246,7 @@ async fn main() {
 
             let event_builder = EventBuilder::text_note(content.clone()).tags(tags);
 
+            let mut manifest_bytes_sent: usize = 0;
             if let Some(event_id) = publish_nostr_event_if_release(
                 &mut client,
                 hex::encode(Sha256::digest(content.as_bytes())),
@@ -217,7 +255,7 @@ async fn main() {
                 &mut relay_urls,
                 "build_manifest.json",
                 &output_dir,
-                &mut total_bytes_sent,
+                &mut manifest_bytes_sent,
             ).await {
 
                 let build_manifest_event_id = Some(event_id);
@@ -260,7 +298,9 @@ async fn main() {
                 // Successfully published announcement
             }
             }
+            total_bytes_sent.fetch_add(manifest_bytes_sent, Ordering::Relaxed);
         }
+        let total_bytes_sent = total_bytes_sent.load(Ordering::Relaxed);
         println!("cargo:warning=Total bytes sent to Nostr relays: {} bytes ({} MB)", total_bytes_sent, total_bytes_sent as f64 / 1024.0 / 1024.0);
     }
 }
