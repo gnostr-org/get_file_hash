@@ -203,3 +203,8 @@ serial_test = { workspace = true }
 name = "gnostr-build"
 path = "examples/gnostr-build.rs"
 required-features = ["nostr"]
+
+[[example]]
+name = "pow_miner"
+path = "examples/pow_miner.rs"
+required-features = ["nostr"]
