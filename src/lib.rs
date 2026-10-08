@@ -5,6 +5,81 @@
 
 pub use get_file_hash_core::get_file_hash;
 
+#[cfg(feature = "nostr")]
+use nostr_sdk::{Event, EventBuilder, EventId, Keys, Tag, UnsignedEvent};
+
+#[cfg(feature = "nostr")]
+const DEFAULT_MAX_POW_ATTEMPTS: u128 = 100_000_000;
+
+/// Mine a Nostr event whose ID starts with the given lowercase-hex prefix.
+///
+/// The SDK's [`EventBuilder::pow`](nostr_sdk::EventBuilder::pow) only supports
+/// NIP-13 leading-zero-bits difficulty. This helper does custom-prefix mining
+/// by brute-forcing a `["nonce", "<nonce>", "0"]` tag until the computed
+/// event ID matches the desired prefix.
+///
+/// # Arguments
+///
+/// * `keys` - The keypair used to sign the event.
+/// * `builder` - A pre-configured event builder (content, tags, kind, ...).
+/// * `prefix` - The desired hex prefix (case-insensitive). Each extra hex
+///   character increases the expected search time by a factor of 16.
+/// * `max_attempts` - Safety cap. Returns `None` if no matching nonce is found.
+///
+/// # Example
+///
+/// ```no_run
+/// use get_file_hash::mine_event_with_prefix;
+/// use nostr_sdk::{EventBuilder, Keys, Tag};
+///
+/// let keys = Keys::generate();
+/// let builder = EventBuilder::text_note("hello")
+///     .tag(Tag::parse(["example", "pow"]).unwrap());
+///
+/// if let Some(event) = mine_event_with_prefix(&keys, builder, "0000", 10_000_000) {
+///     println!("mined event id: {}", event.id);
+/// }
+/// ```
+#[cfg(feature = "nostr")]
+pub fn mine_event_with_prefix(
+    keys: &Keys,
+    builder: EventBuilder,
+    prefix: &str,
+    max_attempts: u128,
+) -> Option<Event> {
+    let pubkey = keys.public_key();
+    let prefix = prefix.to_ascii_lowercase();
+    let mut nonce: u128 = 0;
+
+    loop {
+        let mut attempt = builder.clone();
+        attempt = attempt.tag(Tag::pow(nonce, 0));
+
+        let mut unsigned: UnsignedEvent = attempt.build(pubkey);
+        let id: EventId = unsigned.id();
+
+        if id.to_hex().starts_with(&prefix) {
+            return unsigned.sign_with_keys(keys).ok();
+        }
+
+        nonce += 1;
+        if nonce > max_attempts {
+            return None;
+        }
+    }
+}
+
+/// Convenience wrapper around [`mine_event_with_prefix`] with a default attempt
+/// cap of 100,000,000.
+#[cfg(feature = "nostr")]
+pub fn mine_event_with_prefix_or_default(
+    keys: &Keys,
+    builder: EventBuilder,
+    prefix: &str,
+) -> Option<Event> {
+    mine_event_with_prefix(keys, builder, prefix, DEFAULT_MAX_POW_ATTEMPTS)
+}
+
 /// The SHA-256 hash of this crate's `build.rs` at the time of compilation.
 pub const BUILD_HASH: &str = env!("BUILD_HASH");
 
