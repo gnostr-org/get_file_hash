@@ -9,6 +9,10 @@ use nostr_sdk::{EventBuilder, EventId, Keys, Tag, SecretKey};
 use std::fs;
 #[cfg(all(not(debug_assertions), feature = "nostr"))]
 use std::sync::atomic::{AtomicUsize, Ordering};
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
+use tokio::sync::Semaphore;
+#[cfg(all(not(debug_assertions), feature = "nostr"))]
+use std::sync::Arc;
 
 use std::path::PathBuf;
 use sha2::{Digest, Sha256};
@@ -151,8 +155,11 @@ async fn main() {
         let mut published_event_ids: Vec<Tag> = Vec::new();
         let total_bytes_sent = AtomicUsize::new(0);
         let mut file_handles: Vec<tokio::task::JoinHandle<(Option<EventId>, usize)>> = Vec::new();
+        const MAX_CONCURRENT_FILES: usize = 16;
+        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_FILES));
 
         for file_path_str in &files_to_publish {
+            let permit = Arc::clone(&semaphore).acquire_owned().await.expect("Failed to acquire semaphore permit");
             let file_path_str = file_path_str.clone();
             let output_dir = output_dir.clone();
             let package_version = package_version.clone();
@@ -160,6 +167,7 @@ async fn main() {
             let mut client = client.clone();
 
             file_handles.push(tokio::spawn(async move {
+                let _permit = permit;
                 let mut task_bytes_sent: usize = 0;
                 println!("cargo:warning=Processing file: {}", file_path_str);
                 match fs::read(&file_path_str) {
