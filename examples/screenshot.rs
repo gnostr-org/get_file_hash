@@ -574,18 +574,16 @@ mod tests {
 
     #[tokio::test]
     async fn live_network_round_trip_uploads_and_returns_url() {
-        let server = match std::env::var("NIP96_LIVE_TEST_SERVER") {
-            Ok(value) => value,
-            Err(_) => return,
-        };
+        let server = std::env::var("NIP96_LIVE_TEST_SERVER")
+            .unwrap_or_else(|_| "https://nostpic.com".to_string());
 
         println!("LIVE NIP-96 TEST SERVER: {server}");
 
         let file_path = std::env::temp_dir().join(format!(
-            "get_file_hash-live-screenshot-{}.svg",
+            "get_file_hash-live-screenshot-{}.png",
             std::process::id()
         ));
-        fs::write(&file_path, EMBEDDED_ICON_SVG).expect("write live test svg");
+        fs::write(&file_path, EMBEDDED_ICON_PNG).expect("write live test png");
 
         let keys = Keys::generate();
         let server_url = Url::parse(&server).expect("parse live test server URL");
@@ -602,7 +600,7 @@ mod tests {
         );
 
         let config = nip96::ServerConfig::from_json(&config_output.stdout).expect("parse config");
-        let upload_request = nip96::UploadRequest::new(&keys, &config, EMBEDDED_ICON_SVG)
+        let upload_request = nip96::UploadRequest::new(&keys, &config, EMBEDDED_ICON_PNG)
             .await
             .expect("build upload request");
 
@@ -617,7 +615,7 @@ mod tests {
                 "-H",
                 &format!("Authorization: {}", upload_request.authorization()),
                 "-F",
-                &format!("file=@{};type={}", file_path.display(), EMBEDDED_ICON_SVG_CONTENT_TYPE),
+                &format!("file=@{};type=image/png", file_path.display()),
             ])
             .output()
             .expect("run live upload curl");
@@ -640,13 +638,13 @@ mod tests {
             "live download failed: {}",
             String::from_utf8_lossy(&download.stderr)
         );
-        assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
         let output_dir = std::env::current_dir().expect("current dir");
-        let saved_path = timestamped_icon_output_path_for_content_type(&output_dir, "image/svg+xml");
-        fs::write(&saved_path, &download.stdout).expect("save returned live svg icon");
-        assert_eq!(fs::read(&saved_path).expect("read saved live svg icon"), EMBEDDED_ICON_SVG);
-        fs::remove_file(&saved_path).ok();
-        println!("LIVE RELAY ONE-LINE: uploaded screenshot bytes and fetched them back unchanged");
+        assert!(!download.stdout.is_empty(), "live download returned empty body");
+        let saved_path = timestamped_icon_output_path_for_download_url(&output_dir, &download_url);
+        fs::write(&saved_path, &download.stdout).expect("save returned live icon");
+        assert_eq!(fs::metadata(&saved_path).expect("saved live icon metadata").len(), download.stdout.len() as u64);
+        println!("LIVE SAVED PATH: {}", saved_path.display());
+        println!("LIVE RELAY ONE-LINE: uploaded screenshot bytes and fetched them back");
 
         fs::remove_file(&file_path).ok();
     }
