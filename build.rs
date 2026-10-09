@@ -314,6 +314,11 @@ async fn main() {
         }
         let total_bytes_sent = total_bytes_sent.load(Ordering::Relaxed);
         println!("cargo:warning=Total bytes sent to Nostr relays: {} bytes ({} MB)", total_bytes_sent, total_bytes_sent as f64 / 1024.0 / 1024.0);
+        println!(
+            "cargo:warning=Build sequence complete; PADDED_COMMIT_HASH={}; NPUB={}",
+            padded_commit_hash,
+            initial_keys.public_key().to_bech32().expect("Failed to encode Nostr npub")
+        );
     }
 }
 // deterministic nostr event build example
