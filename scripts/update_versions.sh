@@ -404,7 +404,8 @@ tag_package_versions() {
         if [ "$crate" = "." ]; then
             tag="gnostr/v$version"
         else
-            tag="$crate/v$version"
+            crate_tag="${crate#./}"
+            tag="${crate_tag%/}/v$version"
         fi
         commit="$(printf '%s\n' "$tag" | git commit-tree "$tree" -p HEAD)"
         git tag -f "$tag" "$commit"
