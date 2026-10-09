@@ -28,6 +28,9 @@ pub use frost_secp256k1_tr as frost_bip340;
 pub mod frost_mailbox_logic;
 
 #[cfg(feature = "nostr")]
+pub mod pip;
+
+#[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
 pub const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";

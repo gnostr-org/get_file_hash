@@ -32,7 +32,7 @@ const DEFAULT_MAX_POW_ATTEMPTS: u128 = 100_000_000;
 /// use get_file_hash::mine_event_with_prefix;
 /// use nostr_sdk::{EventBuilder, Keys, Tag};
 ///
-/// let keys = Keys::generate();
+/// let keys = Keys::generate(); ## padded commit hash?
 /// let builder = EventBuilder::text_note("hello")
 ///     .tag(Tag::parse(["example", "pow"]).unwrap());
 ///

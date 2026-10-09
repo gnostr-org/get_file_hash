@@ -35,7 +35,7 @@ async fn main() {
         return;
     }
 
-    let keys = Keys::generate();
+    let keys = Keys::generate(); //TODO padded commit hash?
     println!(
         "mining event with prefix '{}' for pubkey {}",
         prefix,

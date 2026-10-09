@@ -10,12 +10,13 @@ repository = { workspace = true }
 authors = { workspace = true }
 
 [features]
-nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "dep:rand"]
-frost = ["dep:nostr", "dep:nostr-sdk", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "dep:rand"]
+nostr = ["dep:nostr", "dep:nostr-sdk", "dep:serde", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "dep:rand"]
+frost = ["dep:nostr", "dep:nostr-sdk", "dep:serde", "dep:serde_json", "dep:sha2", "dep:hex", "dep:reqwest", "dep:tokio", "dep:csv", "dep:url", "dep:frost-secp256k1-tr", "dep:rand"]
 
 [dependencies]
 sha2 = { workspace = true, optional = true }
 nostr = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
@@ -29,6 +30,7 @@ sha2 = { workspace = true }
 tempfile = { workspace = true }
 nostr = { workspace = true }
 nostr-sdk = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 hex = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
