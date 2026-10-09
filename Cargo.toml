@@ -38,18 +38,15 @@ easy-ext = "1.0.2"
 either = "1.15.0"
 frost-secp256k1-tr = "3.0.0-rc.0"
 futures = "0.3.31"
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core" }
+get_file_hash_core = { version = "970572.1845.808019", features = ["nostr"], path = "src/get_file_hash_core" }
 
 hex = "0.4.2"
 log = "0.4"
-n34 = { path = "n34" }
-n34-relay = { path = "n34-relay" }
-nostr = { version = "0.44.2", features = ["std", "nip46", "nip96"] }
+n34 = { version = "970572.1845.808019", path = "n34" }
+n34-relay = { version = "970572.1845.808019", path = "n34-relay" }
+nostr = { git = "https://github.com/gnostr-org/nostr.git", branch = "master", package = "nostr", features = ["std", "nip46", "nip96"] }
 nostr-browser-signer-proxy = "0.43.0"
-nostr-sdk = { version = "0.44.0", default-features = false, features = [
-    "default",
-    "pow-multi-thread",
-] }
+nostr-sdk = { git = "https://github.com/gnostr-org/nostr.git", branch = "master", package = "nostr-sdk" }
 rand = "0.8"
 rand_chacha = "0.3"
 regex = "1.11.1"
@@ -160,17 +157,17 @@ version = "3.0.3"
 default-features = false
 git = "https://git.4rs.nl/mirrors/nostr.git"
 rev = "27a1947d3"
-# version          = "0.45.0"
+version = "0.44.0"
 [dependencies.nostr-lmdb]
 default-features = false
 git = "https://git.4rs.nl/mirrors/nostr.git"
 rev = "27a1947d3"
-# version          = "0.45.0"
+version = "0.44.0"
 [dependencies.nostr-relay-builder]
 default-features = false
 git = "https://git.4rs.nl/mirrors/nostr.git"
 rev = "27a1947d3"
-# version          = "0.45.0"
+version = "0.44.0"
 [build-dependencies]
 get_file_hash_core = { workspace = true, features = ["nostr"] }
 hex = { workspace = true }
