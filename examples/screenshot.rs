@@ -120,6 +120,26 @@ fn timestamped_icon_output_path_for_content_type(dir: &Path, content_type: &str)
     }
 }
 
+fn timestamped_icon_output_path_for_download_url(dir: &Path, download_url: &Url) -> PathBuf {
+    let filename = download_url
+        .path_segments()
+        .and_then(|segments| segments.last())
+        .unwrap_or("icon.bin");
+    let original = Path::new(filename);
+    let stem = original
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("icon");
+    let ext = original.extension().and_then(|value| value.to_str()).unwrap_or("");
+    let timestamp = Utc::now().timestamp();
+    let file_name = if ext.is_empty() {
+        format!("{stem}-{timestamp}")
+    } else {
+        format!("{stem}-{timestamp}.{ext}")
+    };
+    dir.join(file_name)
+}
+
 fn extract_multipart_file_bytes(bytes: &[u8]) -> &[u8] {
     let first_line_end = match bytes.windows(2).position(|window| window == b"\r\n") {
         Some(pos) => pos,
@@ -283,8 +303,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .output()?;
                 if download_output.status.success() {
                     let output_dir = env::current_dir()?;
-                    let saved_path =
-                        timestamped_icon_output_path_for_content_type(&output_dir, file_content_type);
+                    let saved_path = timestamped_icon_output_path_for_download_url(&output_dir, &url);
                     let image_bytes = extract_multipart_file_bytes(&download_output.stdout);
                     fs::write(&saved_path, image_bytes)?;
                     println!("Saved returned image to: {}", saved_path.display());
