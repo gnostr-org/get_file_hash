@@ -60,7 +60,7 @@ manifest_version() {
     local manifest="$1"
     local fallback="$2"
 
-    if grep -q '^version\.workspace = true' "$manifest"; then
+    if grep -Eq '^version(\.workspace = true| = \{ workspace = true \})' "$manifest"; then
         printf '>=%s\n' "$fallback"
         return
     fi
@@ -131,8 +131,7 @@ versioned_path_dependencies() {
             my ($dep_name, $dep_body) = @_;
             return unless defined $dep_name && length $dep_name;
             my ($path) = $dep_body =~ /\bpath\s*=\s*"([^"]+)"/;
-            my ($version) = $dep_body =~ /\bversion\s*=\s*"([^"]+)"/;
-            if (defined $path && defined $version) {
+            if (defined $path) {
                 print "$dep_name\t$path\n";
             }
         }
@@ -193,7 +192,7 @@ sync_package_version() {
     local manifest="$1"
     local version="$2"
 
-    if grep -q '^version\.workspace = true' "$manifest"; then
+    if grep -Eq '^version(\.workspace = true| = \{ workspace = true \})' "$manifest"; then
         return
     fi
 
@@ -256,16 +255,22 @@ while True:
         break
 
     block = text[match.start():block_end]
-    if "path" not in block or "version" not in block:
+    if "path" not in block:
         offset = block_end
         continue
 
-    updated_block, count = re.subn(
-        r'(\bversion\s*=\s*")[^"]*(")',
-        lambda m: f"{m.group(1)}{version}{m.group(2)}",
-        block,
-        count=1,
-    )
+    if "version" in block:
+        updated_block, count = re.subn(
+            r'(\bversion\s*=\s*")[^"]*(")',
+            lambda m: f"{m.group(1)}{version}{m.group(2)}",
+            block,
+            count=1,
+        )
+    else:
+        insertion = f', version = "{version}"'
+        updated_block = block[:-1] + insertion + block[-1:]
+        count = 1
+
     if count:
         text = text[:match.start()] + updated_block + text[block_end:]
         offset = match.start() + len(updated_block)
@@ -365,10 +370,10 @@ echo "Local path dependency versions synchronized."
 # crate that depends on them. Dev-dependency cycles (e.g. asyncgit <-> ngit)
 # cannot be resolved by ordering alone and are left to --no-verify / retry.
 PUBLISH_CRATES=(
-    .
-    ./src/get_file_hash_core
     n34
     n34-relay
+    ./src/get_file_hash_core
+    .
 )
 
 for crate in "${PUBLISH_CRATES[@]}"; do

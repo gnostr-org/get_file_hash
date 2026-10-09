@@ -263,18 +263,18 @@ pub fn packet_manifest_to_event(
     Ok(
         EventBuilder::new(PIP_MANIFEST_KIND, serde_json::to_string(manifest)?)
             .tag(Tag::identifier(manifest.root.clone()))
-            .tag(Tag::custom("sha256".into(), [manifest.sha256.clone()]))
-            .tag(Tag::custom("size".into(), [manifest.size.to_string()]))
-            .tag(Tag::custom("packets".into(), [manifest.packets.to_string()]))
-            .tag(Tag::custom("depth".into(), [manifest.depth.to_string()]))
-            .tag(Tag::custom("mtu".into(), [manifest.mtu.to_string()]))
-            .tag(Tag::custom("encoding".into(), [manifest.encoding.clone()]))
-            .tag(Tag::custom("path".into(), [manifest.path.clone()]))
+            .tag(Tag::custom("sha256", [manifest.sha256.clone()]))
+            .tag(Tag::custom("size", [manifest.size.to_string()]))
+            .tag(Tag::custom("packets", [manifest.packets.to_string()]))
+            .tag(Tag::custom("depth", [manifest.depth.to_string()]))
+            .tag(Tag::custom("mtu", [manifest.mtu.to_string()]))
+            .tag(Tag::custom("encoding", [manifest.encoding.clone()]))
+            .tag(Tag::custom("path", [manifest.path.clone()]))
             .tag(Tag::hashtag(PIP_HASHTAG))
             .tag(Tag::hashtag("manifest"))
             .tags(packet_event_ids.iter().map(|event_id| {
                 Tag::custom(
-                    "e".into(),
+                    "e",
                     [event_id.to_string(), String::new(), "slice".to_string()],
                 )
             })),
@@ -286,7 +286,7 @@ pub fn manifest_packet_event_ids(event: &Event) -> Vec<EventId> {
     event
         .tags
         .iter()
-        .filter(|tag| tag.kind().as_str() == "e" && tag.len() >= 4 && tag.as_slice()[3].as_str() == "slice")
+        .filter(|tag| tag.kind() == "e" && tag.len() >= 4 && tag.as_slice()[3].as_str() == "slice")
         .filter_map(|tag| tag.content().and_then(|value| EventId::parse(value).ok()))
         .collect()
 }
@@ -300,17 +300,17 @@ pub fn repair_request_to_event(
         EventBuilder::new(PIP_REPAIR_REQUEST_KIND, serde_json::to_string(request)?)
             .tag(Tag::identifier(request.root.clone()))
             .tag(Tag::custom(
-                "e".into(),
+                "e",
                 [
                     manifest_event_id.to_string(),
                     String::new(),
                     "request".to_string(),
                 ],
             ))
-            .tag(Tag::custom("encoding".into(), [request.encoding.clone()]))
+            .tag(Tag::custom("encoding", [request.encoding.clone()]))
             .tag(Tag::hashtag(PIP_HASHTAG))
             .tag(Tag::hashtag("repair")),
-        |builder, want| builder.tag(Tag::custom("want".into(), [want.clone()])),
+        |builder, want| builder.tag(Tag::custom("want", [want.clone()])),
     );
 
     Ok(builder)
@@ -323,10 +323,10 @@ pub fn packet_slice_to_event(slice: &ProtocolSlice) -> Result<EventBuilder, serd
     Ok(
         EventBuilder::new(PIP_SLICE_KIND, serde_json::to_string(slice)?)
             .tag(Tag::identifier(slice.id.clone()))
-            .tag(Tag::custom("seq".into(), [slice.header.seq_num.to_string()]))
-            .tag(Tag::custom("path".into(), [slice.id.clone()]))
-            .tag(Tag::custom("type".into(), [type_tag.to_string()]))
-            .tag(Tag::custom("encoding".into(), ["json"]))
+            .tag(Tag::custom("seq", [slice.header.seq_num.to_string()]))
+            .tag(Tag::custom("path", [slice.id.clone()]))
+            .tag(Tag::custom("type", [type_tag.to_string()]))
+            .tag(Tag::custom("encoding", ["json"]))
             .tag(Tag::hashtag(PIP_HASHTAG))
             .tag(Tag::hashtag("slice")),
     )
@@ -343,7 +343,7 @@ fn proposal_record_to_slice(
 
     let Some(root_id) = tags
         .iter()
-        .find(|tag| tag.kind().as_str() == "d")
+        .find(|tag| tag.kind() == "d")
         .and_then(|tag| tag.content())
     else {
         return Ok(None);
@@ -351,21 +351,21 @@ fn proposal_record_to_slice(
 
     if !tags
         .iter()
-        .any(|tag| tag.kind().as_str() == "t" && tag.content() == Some(PIP_HASHTAG))
+        .any(|tag| tag.kind() == "t" && tag.content() == Some(PIP_HASHTAG))
     {
         return Ok(None);
     }
 
     if !tags
         .iter()
-        .any(|tag| tag.kind().as_str() == "t" && tag.content() == Some("slice"))
+        .any(|tag| tag.kind() == "t" && tag.content() == Some("slice"))
     {
         return Ok(None);
     }
 
     let Some(path) = tags
         .iter()
-        .find(|tag| tag.kind().as_str() == "path")
+        .find(|tag| tag.kind() == "path")
         .and_then(|tag| tag.content())
     else {
         return Ok(None);
@@ -435,7 +435,7 @@ fn record_to_slice(
 
     let Some(identifier) = tags
         .iter()
-        .find(|tag| tag.kind().as_str() == "d")
+        .find(|tag| tag.kind() == "d")
         .and_then(|tag| tag.content())
     else {
         return Ok(None);
@@ -443,7 +443,7 @@ fn record_to_slice(
 
     if !tags
         .iter()
-        .any(|tag| tag.kind().as_str() == "t" && tag.content() == Some(PERFECT_IP_HASHTAG))
+        .any(|tag| tag.kind() == "t" && tag.content() == Some(PERFECT_IP_HASHTAG))
     {
         return Ok(None);
     }
@@ -1607,13 +1607,13 @@ mod tests {
             event
                 .tags
                 .iter()
-                .any(|tag| tag.kind().as_str() == "d" && tag.content() == Some("ROOT.0"))
+                .any(|tag| tag.kind() == "d" && tag.content() == Some("ROOT.0"))
         );
         assert!(
             event
                 .tags
                 .iter()
-                .any(|tag| tag.kind().as_str() == "t" && tag.content() == Some(PERFECT_IP_HASHTAG))
+                .any(|tag| tag.kind() == "t" && tag.content() == Some(PERFECT_IP_HASHTAG))
         );
         assert!(
             perfect_ip_filter(Some("ROOT.0"))

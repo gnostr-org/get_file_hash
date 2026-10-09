@@ -171,7 +171,7 @@ pub fn write_event_json_to_file(
 
 #[cfg(feature = "nostr")]
 pub async fn publish_nostr_event_if_release(
-    client: &mut nostr_sdk::Client,
+    client: &mut nostr_sdk::client::Client,
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
@@ -182,14 +182,15 @@ pub async fn publish_nostr_event_if_release(
 ) -> Option<EventId> {
     let public_key = keys.public_key().to_string();
 
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.finalize(&keys).unwrap();
 
-    match client.send_event(&event).await {        Ok(event_output) => {
-            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
+    match client.send_event(&event).await {
+        Ok(event_output) => {
+            println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.value);
 
             let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
             // Print successful relays
-            for relay_url in event_output.success.iter() {
+            for (relay_url, _) in event_output.success.iter() {
                 println!("cargo:warning=Successfully published to relay: {} ({} bytes)", relay_url, event_json_size);
                 *total_bytes_sent += event_json_size;
             }
@@ -203,9 +204,9 @@ pub async fn publish_nostr_event_if_release(
                 }
             }
 
-            let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.val.to_string());
+            let filename = format!("{}/{}/{}/{}.json", file_path_str, hash, public_key.clone(), event_output.value.to_string());
             write_event_json_to_file(output_dir, &filename, &event);
-            Some(event_output.val)
+            Some(event_output.value)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
@@ -216,7 +217,7 @@ pub async fn publish_nostr_event_if_release(
 
 #[cfg(feature = "nostr")]
 pub async fn get_repo_announcement_event(
-    client: &mut nostr_sdk::Client,
+    client: &mut nostr_sdk::client::Client,
     _keys: &Keys,
     relay_urls: &Vec<String>,
     repo_url: &str,
@@ -248,15 +249,15 @@ pub async fn get_repo_announcement_event(
         tags.push(Tag::parse(["relays", relay].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap());
     }
     let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.finalize(_keys).unwrap();
 
     match client.send_event(&event).await {
         Ok(event_output) => {
-            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.value);
             
-            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.value.to_string());
             write_event_json_to_file(output_dir, &filename, &event);
-            Some(event_output.val)
+            Some(event_output.value)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
@@ -267,7 +268,7 @@ pub async fn get_repo_announcement_event(
 
 #[cfg(feature = "nostr")]
 pub async fn publish_repo_patch_event(
-    client: &mut nostr_sdk::Client,
+    client: &mut nostr_sdk::client::Client,
     _keys: &Keys,
     _relay_urls: &Vec<String>,
     repo_url: &str,
@@ -288,15 +289,15 @@ pub async fn publish_repo_patch_event(
     ];
 
     let event_builder = EventBuilder::new(Kind::Custom(1617), repo_description).tags(tags);
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.finalize(_keys).unwrap();
 
     match client.send_event(&event).await {
         Ok(event_output) => {
-            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.val);
+            println!("cargo:warning=Published Nostr Repository Announcement for {}: {}", repo_name, event_output.value);
             
-            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.val.to_string());
+            let filename = format!("30617/{}/{}/{}.json", repo_name, public_key_hex, event_output.value.to_string());
             write_event_json_to_file(output_dir, &filename, &event);
-            Some(event_output.val)
+            Some(event_output.value)
         },
         Err(e) => {
             println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
@@ -751,7 +752,9 @@ pub async fn publish_metadata_event(
     banner_url: &str,
     file_path_str: &str,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -767,10 +770,12 @@ pub async fn publish_metadata_event(
         "about": format!("Metadata for file event: {}", file_path_str),
     });
 
-    let metadata = serde_json::from_str::<nostr_sdk::Metadata>(&metadata_json.to_string())
-        .expect("Failed to parse metadata JSON");
+    let event = EventBuilder::new(Kind::Metadata, metadata_json.to_string())
+        .finalize(keys)
+        .unwrap();
 
-    match client.send_event_builder(EventBuilder::metadata(&metadata)).await {
+    match client.send_event(&event).await
+    {
         Ok(_event_id) => {
             //println!("cargo:warning=Published Nostr metadata event for {}: {:?}", file_path_str, event_id);
         }
@@ -791,7 +796,9 @@ pub async fn publish_repository_announcement_event(
     d_tag_value: &str, // d-tag value
     build_manifest_event_id: Option<&EventId>,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -804,8 +811,8 @@ pub async fn publish_repository_announcement_event(
         Tag::parse(["name", project_name]).expect("Failed to create name tag"),
         Tag::parse(["description", description]).expect("Failed to create description tag"),
         Tag::parse(["clone", clone_url]).expect("Failed to create clone tag"),
-        Tag::custom("euc".into(), vec![euc.to_string()]),
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // NIP-33 d-tag
+        Tag::custom("euc", vec![euc.to_string()]),
+        Tag::custom("d", vec![d_tag_value.to_string()]), // NIP-33 d-tag
     ];
 
     if let Some(event_id) = build_manifest_event_id {
@@ -817,7 +824,9 @@ pub async fn publish_repository_announcement_event(
         "", // Content is empty for repository announcement
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Repository Announcement for {}. Event ID (raw): {:?}, Event ID (bech32): {}", project_name, event_id, event_id.to_bech32().unwrap());
         }
@@ -836,7 +845,9 @@ pub async fn publish_patch_event(
     patch_content: &str,
     build_manifest_event_id: Option<&EventId>,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -846,7 +857,7 @@ pub async fn publish_patch_event(
     client.connect().await;
 
     let mut tags = vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::custom("d", vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
     ];
 
@@ -859,7 +870,9 @@ pub async fn publish_patch_event(
         patch_content,
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=\nPublished NIP-34 Patch event for commit {}.\nEvent ID (raw): {:?},\nEvent ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -879,7 +892,9 @@ pub async fn publish_pull_request_event(
     title: Option<&str>,
     build_manifest_event_id: Option<&EventId>,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -889,7 +904,7 @@ pub async fn publish_pull_request_event(
     client.connect().await;
 
     let mut tags = vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::custom("d", vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["commit", commit_id]).expect("Failed to create commit tag"),
         Tag::parse(["clone", clone_url]).expect("Failed to create clone tag"),
     ];
@@ -907,7 +922,9 @@ pub async fn publish_pull_request_event(
         "gnostr patch", // Content can be empty or a description for the PR
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Pull Request event for commit {}. Event ID (raw): {:?}, Event ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -927,7 +944,9 @@ pub async fn publish_pr_update_event(
     updated_clone_url: &str,
     build_manifest_event_id: Option<&EventId>,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -937,7 +956,7 @@ pub async fn publish_pr_update_event(
     client.connect().await;
 
     let mut tags = vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::custom("d", vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["p", pr_event_id.to_string().as_str()]).expect("Failed to create PR event ID tag"),
         Tag::parse(["commit", updated_commit_id]).expect("Failed to create updated commit ID tag"),
         Tag::parse(["clone", updated_clone_url]).expect("Failed to create updated clone URL tag"),
@@ -952,7 +971,9 @@ pub async fn publish_pr_update_event(
         "", // Content is empty for PR update
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 PR Update event for PR {} (raw: {:?}). Event ID (raw): {:?}, Event ID (bech32): {}", pr_event_id.to_bech32().unwrap(), pr_event_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -970,7 +991,9 @@ pub async fn publish_repository_state_event(
     branch_name: &str,
     commit_id: &str,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::builder()
+        .authenticator(SignerAuthenticator::new(keys.clone()))
+        .build();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -983,12 +1006,14 @@ pub async fn publish_repository_state_event(
         Kind::Custom(30618), // NIP-34 Repository State kind
         "", // Content is empty for repository state
     ).tags(vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::custom("d", vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["name", branch_name]).expect("Failed to create branch name tag"),
         Tag::parse(["commit", commit_id]).expect("Failed to create commit ID tag"),
     ]);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}). Event ID (raw): {:?}, Event ID (bech32): {}", branch_name, commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -1008,7 +1033,7 @@ pub async fn publish_issue_event(
     content: &str,
     build_manifest_event_id: Option<&EventId>,
 ) {
-    let client = nostr_sdk::Client::new(keys.clone());
+    let client = nostr_sdk::client::Client::new();
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
@@ -1018,7 +1043,7 @@ pub async fn publish_issue_event(
     client.connect().await;
 
     let mut tags = vec![
-        Tag::custom("d".into(), vec![d_tag_value.to_string()]), // Repository d-tag
+        Tag::custom("d", vec![d_tag_value.to_string()]), // Repository d-tag
         Tag::parse(["i", issue_id]).expect("Failed to create issue ID tag"),
         Tag::parse(["title", title]).expect("Failed to create title tag"),
     ];
@@ -1032,7 +1057,9 @@ pub async fn publish_issue_event(
         content,
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.finalize(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Issue event for issue {} ({}). Event ID (raw): {:?}, Event ID (bech32): {}", issue_id, title, event_id, event_id.to_bech32().unwrap());
         }

@@ -174,6 +174,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-utility"
+version = "0.3.2"
+source = "git+https://github.com/yukibtc/async-utility?rev=7d3a79983d0e848aafed9d321637af7334e01349#7d3a79983d0e848aafed9d321637af7334e01349"
+dependencies = [
+ "futures-util",
+ "gloo-timers",
+ "tokio",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
 name = "async-wsocket"
 version = "0.13.1"
 source = "git+https://github.com/shadowylab/async-wsocket?rev=0fed6c9c6aec7393ee0e9cf3933d76914ab427d3#0fed6c9c6aec7393ee0e9cf3933d76914ab427d3"
@@ -197,7 +208,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c92385c7c8b3eb2de1b78aeca225212e4c9a69a78b802832759b108681a5069"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures",
  "futures-util",
  "js-sys",
@@ -207,6 +218,26 @@ dependencies = [
  "tokio-tungstenite 0.26.2",
  "url",
  "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "async-wsocket"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c713e1f14c7b82e32ea159af1c6e2f070cfadbdf23fb2512acce9af0a26f1a2"
+dependencies = [
+ "futures",
+ "futures-util",
+ "js-sys",
+ "tokio",
+ "tokio-happy-eyeballs",
+ "tokio-rustls",
+ "tokio-socks",
+ "tokio-tungstenite 0.28.0",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -323,12 +354,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32637268377fc7b10a8c6d51de3e7fba1ce5dd371a96e342b34e6078db558e7f"
 
 [[package]]
+name = "bech32"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efbd3e1070bbdf4cd88a75264e18e8a26f7cb5c6949eadf0ceb85fb159cf08f8"
+
+[[package]]
 name = "bip39"
 version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90dbd31c98227229239363921e60fcf5e558e43ec69094d46fc4996f08d1d5bc"
 dependencies = [
- "bitcoin_hashes",
+ "bitcoin_hashes 0.14.101",
  "serde",
  "unicode-normalization",
 ]
@@ -339,10 +376,16 @@ version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9daa31138eb443d5751b207f3f64154e2bb09cd59960562ccc7a7112be38147f"
 dependencies = [
- "bitcoin-internals",
+ "bitcoin-internals 0.7.0",
  "hex-conservative 1.3.0",
  "serde",
 ]
+
+[[package]]
+name = "bitcoin-internals"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d573f4cf32996a8dce612e4348cece65a241f1882ed594047c9ba348e8869fa5"
 
 [[package]]
 name = "bitcoin-internals"
@@ -367,6 +410,18 @@ checksum = "bca4c7abb40c8817d77403c880988cfd484f23ab2365726afb2f798363e2c4a2"
 dependencies = [
  "bitcoin-io",
  "hex-conservative 0.2.3",
+ "serde",
+]
+
+[[package]]
+name = "bitcoin_hashes"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5304e53726dbe5f93141535e102ed97b5bf4714fbecefdda8f9fb98d7fdaff0e"
+dependencies = [
+ "bitcoin-consensus-encoding",
+ "bitcoin-internals 0.6.0",
+ "hex-conservative 1.3.0",
  "serde",
 ]
 
@@ -929,6 +984,15 @@ dependencies = [
 
 [[package]]
 name = "defmt"
+version = "0.3.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0963443817029b2024136fc4dd07a5107eb8f977eaf18fcd1fdeb11306b64ad"
+dependencies = [
+ "defmt 1.1.1",
+]
+
+[[package]]
+name = "defmt"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2953bfe4f93bbd20cc71198842756f77d161884c99ebbabc41d80231ded88d1"
@@ -1142,6 +1206,18 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "faster-hex"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04839bdf9d8c10f66806fad16b852fc72aab80873aebc3cb69d85b4fa41543ed"
+dependencies = [
+ "autocfg",
+ "defmt 0.3.100",
+ "heapless 0.8.0",
+ "serde",
 ]
 
 [[package]]
@@ -1391,7 +1467,7 @@ dependencies = [
 
 [[package]]
 name = "get_file_hash"
-version = "970572.1845.808019"
+version = "970574.1845.805613"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -1413,11 +1489,11 @@ dependencies = [
  "hyper-util",
  "n34",
  "n34-relay",
- "nostr 0.44.8",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr 0.45.5",
+ "nostr-database 0.44.0",
  "nostr-lmdb",
  "nostr-relay-builder",
- "nostr-sdk 0.44.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nostr-sdk 0.45.4",
  "parking_lot",
  "prost",
  "protobuf-src",
@@ -1446,14 +1522,14 @@ dependencies = [
 
 [[package]]
 name = "get_file_hash_core"
-version = "970572.1845.808019"
+version = "970574.1845.805613"
 dependencies = [
  "csv",
  "frost-secp256k1-tr",
  "hex",
  "log",
- "nostr 0.44.8",
- "nostr-sdk 0.44.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nostr 0.45.5",
+ "nostr-sdk 0.45.4",
  "rand 0.8.8",
  "reqwest",
  "serde",
@@ -1556,6 +1632,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hash32"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47d60b12902ba28e2730cd37e95b8c9223af2808df9e902d4df49588d1470606"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1583,10 +1668,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdc6457c0eb62c71aac4bc17216026d8410337c4126773b9c5daba343f17964f"
 dependencies = [
  "atomic-polyfill",
- "hash32",
+ "hash32 0.2.1",
  "rustc_version",
  "serde",
  "spin 0.9.9",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "heapless"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bfb9eb618601c89945a70e254898da93b13be0388091d42117462b265bb3fad"
+dependencies = [
+ "hash32 0.3.1",
  "stable_deref_trait",
 ]
 
@@ -2004,7 +2099,7 @@ version = "0.2.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2b005715dcbeb0089a3c0dab99f2ff1cc3b2525323552703d648585d342a383"
 dependencies = [
- "defmt",
+ "defmt 1.1.1",
  "jiff-core",
  "jiff-static",
  "jiff-tzdb-platform",
@@ -2021,7 +2116,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e52fe76043ccecc9005d2305ebaadf7d7fc0cc89ca6baa10a94d6bc68c7128c"
 dependencies = [
- "defmt",
+ "defmt 1.1.1",
  "log",
 ]
 
@@ -2206,6 +2301,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f66e8d5d03f609abc3a39e6f08e4164ebf1447a732906d39eb9b99b7919ef39"
 
 [[package]]
+name = "lru"
+version = "0.18.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef9ac18847474e638e3702b76c65d4eb93428471a74778ef0f1be711717f89b5"
+
+[[package]]
 name = "lru-slab"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2267,7 +2368,7 @@ checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 
 [[package]]
 name = "n34"
-version = "970572.1845.808019"
+version = "970574.1845.805613"
 dependencies = [
  "chrono",
  "clap",
@@ -2295,7 +2396,7 @@ dependencies = [
 
 [[package]]
 name = "n34-relay"
-version = "970572.1845.808019"
+version = "970574.1845.805613"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2311,7 +2412,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-database 0.44.0",
  "nostr-lmdb",
  "nostr-relay-builder",
  "parking_lot",
@@ -2369,16 +2470,16 @@ checksum = "62a97d745f1bd8d5e05a978632bbb87b0614567d5142906fe7c86fb2440faac6"
 dependencies = [
  "aes",
  "base64 0.22.1",
- "bech32",
+ "bech32 0.11.1",
  "bip39",
- "bitcoin_hashes",
+ "bitcoin_hashes 0.14.101",
  "cbc",
  "chacha20 0.9.1",
  "chacha20poly1305",
  "getrandom 0.2.17",
  "instant",
  "scrypt",
- "secp256k1",
+ "secp256k1 0.29.1",
  "serde",
  "serde_json",
  "unicode-normalization",
@@ -2391,46 +2492,46 @@ version = "0.44.1"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
 dependencies = [
  "base64 0.22.1",
- "bech32",
+ "bech32 0.11.1",
  "bip39",
- "bitcoin_hashes",
+ "bitcoin_hashes 0.14.101",
  "cbc",
  "chacha20 0.9.1",
  "chacha20poly1305",
  "hex",
  "rand 0.9.5",
  "scrypt",
- "secp256k1",
+ "secp256k1 0.29.1",
  "serde",
  "serde_json",
  "unicode-normalization",
- "universal-time",
+ "universal-time 0.2.0",
  "url",
 ]
 
 [[package]]
 name = "nostr"
-version = "0.44.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40ff7b77ef428b40aa2834a6acbae38a0e104c98b306208ca4b87a420d579a4b"
+version = "0.45.5"
+source = "git+https://github.com/gnostr-org/nostr.git?branch=master#463f0c2d48e1d3c9e295cc231715d8a3855c65d3"
 dependencies = [
  "aes",
  "base64 0.22.1",
- "bech32",
+ "bech32 0.12.0",
  "bip39",
- "bitcoin_hashes",
+ "bitcoin_hashes 1.2.0",
  "cbc",
  "chacha20 0.9.1",
  "chacha20poly1305",
- "getrandom 0.2.17",
- "hex",
- "instant",
- "scrypt",
- "secp256k1",
+ "faster-hex",
+ "opaquerr",
+ "rand 0.10.3",
+ "secp256k1 0.30.0",
  "serde",
  "serde_json",
  "unicode-normalization",
+ "universal-time 0.3.1",
  "url",
+ "zeroize",
 ]
 
 [[package]]
@@ -2458,9 +2559,9 @@ version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3bcd44ea344d1cab3447615681cd3bb90134cafe4d157d3e714c23c31268cd8"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "nostr 0.43.1",
- "nostr-relay-pool 0.43.1",
+ "nostr-relay-pool",
  "tokio",
  "tracing",
 ]
@@ -2471,19 +2572,8 @@ version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c75a8c2175d2785ba73cfddef21d1e30da5fbbdf158569b6808ba44973a15b"
 dependencies = [
- "lru",
+ "lru 0.16.4",
  "nostr 0.43.1",
- "tokio",
-]
-
-[[package]]
-name = "nostr-database"
-version = "0.44.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7462c9d8ae5ef6a28d66a192d399ad2530f1f2130b13186296dbb11bdef5b3d1"
-dependencies = [
- "lru",
- "nostr 0.44.8",
  "tokio",
 ]
 
@@ -2498,12 +2588,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "nostr-gossip"
-version = "0.44.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ade30de16869618919c6b5efc8258f47b654a98b51541eb77f85e8ec5e3c83a6"
+name = "nostr-database"
+version = "0.45.2"
+source = "git+https://github.com/gnostr-org/nostr.git?branch=master#463f0c2d48e1d3c9e295cc231715d8a3855c65d3"
 dependencies = [
- "nostr 0.44.8",
+ "nostr 0.45.5",
+ "opaquerr",
 ]
 
 [[package]]
@@ -2512,6 +2602,15 @@ version = "0.44.0"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
 dependencies = [
  "nostr 0.44.1",
+]
+
+[[package]]
+name = "nostr-gossip"
+version = "0.45.1"
+source = "git+https://github.com/gnostr-org/nostr.git?branch=master#463f0c2d48e1d3c9e295cc231715d8a3855c65d3"
+dependencies = [
+ "nostr 0.45.5",
+ "opaquerr",
 ]
 
 [[package]]
@@ -2529,11 +2628,11 @@ name = "nostr-lmdb"
 version = "0.44.0"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "flume 0.12.0",
  "heed",
  "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-database 0.44.0",
  "tokio",
  "tracing",
 ]
@@ -2545,7 +2644,7 @@ source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5a
 dependencies = [
  "btreecap",
  "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-database 0.44.0",
  "tokio",
 ]
 
@@ -2554,15 +2653,15 @@ name = "nostr-relay-builder"
 version = "0.44.0"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-wsocket 0.13.1",
  "atomic-destructor",
  "hex",
  "negentropy",
  "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-database 0.44.0",
  "nostr-memory",
- "nostr-sdk 0.44.1 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-sdk 0.44.1",
  "tokio",
  "tracing",
 ]
@@ -2573,31 +2672,13 @@ version = "0.43.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b2f43b70d13dfc50508a13cd902e11f4625312b2ce0e4b7c4c2283fd04001bd"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-wsocket 0.13.2",
  "atomic-destructor",
- "lru",
+ "lru 0.16.4",
  "negentropy",
  "nostr 0.43.1",
  "nostr-database 0.43.0",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "nostr-relay-pool"
-version = "0.44.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c85c54d6ca9aae4ae2bf19a7663ba9db5f45f783f1d24aff55f006386b8b99a1"
-dependencies = [
- "async-utility",
- "async-wsocket 0.13.2",
- "atomic-destructor",
- "hex",
- "lru",
- "negentropy",
- "nostr 0.44.8",
- "nostr-database 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "tracing",
 ]
@@ -2608,26 +2689,11 @@ version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "599f8963d6a1522a13b1a2b0ea6e168acfc367706606f1d33fa595e91fa22db0"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "nostr 0.43.1",
  "nostr-database 0.43.0",
- "nostr-relay-pool 0.43.1",
+ "nostr-relay-pool",
  "tokio",
-]
-
-[[package]]
-name = "nostr-sdk"
-version = "0.44.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "471732576710e779b64f04c55e3f8b5292f865fea228436daf19694f0bf70393"
-dependencies = [
- "async-utility",
- "nostr 0.44.8",
- "nostr-database 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nostr-gossip 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nostr-relay-pool 0.44.3",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -2635,19 +2701,41 @@ name = "nostr-sdk"
 version = "0.44.1"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
 dependencies = [
- "async-utility",
+ "async-utility 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-wsocket 0.13.1",
  "futures",
  "hex",
- "lru",
+ "lru 0.16.4",
  "negentropy",
  "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
- "nostr-gossip 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "nostr-database 0.44.0",
+ "nostr-gossip 0.44.0",
  "tokio",
  "tokio-stream",
  "tracing",
- "universal-time",
+ "universal-time 0.2.0",
+]
+
+[[package]]
+name = "nostr-sdk"
+version = "0.45.4"
+source = "git+https://github.com/gnostr-org/nostr.git?branch=master#463f0c2d48e1d3c9e295cc231715d8a3855c65d3"
+dependencies = [
+ "async-utility 0.3.2 (git+https://github.com/yukibtc/async-utility?rev=7d3a79983d0e848aafed9d321637af7334e01349)",
+ "async-wsocket 0.17.0",
+ "faster-hex",
+ "futures",
+ "lru 0.18.5",
+ "negentropy",
+ "nostr 0.45.5",
+ "nostr-database 0.45.2",
+ "nostr-gossip 0.45.1",
+ "opaquerr",
+ "rand 0.10.3",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "universal-time 0.3.1",
 ]
 
 [[package]]
@@ -2694,6 +2782,12 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
+
+[[package]]
+name = "opaquerr"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f933a4265d5cdad61d19bbdfc972ea5726d56cd8d3d57b8f2d3c365dd42bee9"
 
 [[package]]
 name = "option-ext"
@@ -2887,7 +2981,7 @@ dependencies = [
  "cobs",
  "embedded-io 0.4.0",
  "embedded-io 0.6.1",
- "heapless",
+ "heapless 0.7.17",
  "serde",
 ]
 
@@ -3492,6 +3586,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "secp256k1"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b50c5943d326858130af85e049f2661ba3c78b26589b8ab98e65e80ae44a1252"
+dependencies = [
+ "bitcoin_hashes 0.14.101",
+ "rand 0.8.8",
+ "secp256k1-sys",
+]
+
+[[package]]
 name = "secp256k1-sys"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4044,6 +4149,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-happy-eyeballs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8564c32dfb6f4257f8bc6edfc178a34af97520e0b7b9815500c55eb3d092f29f"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "tokio-macros"
 version = "2.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4511,6 +4625,12 @@ name = "universal-time"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b35da41b69caac5d25e3eba1ca0b7e9ac859a23af369d2e36a37dbb7defbc93"
+
+[[package]]
+name = "universal-time"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47a939edecc3c5a7b83c02e5f6b3c31d2bc69eabcc9a87ab12c6d37ee6dbc856"
 
 [[package]]
 name = "untrusted"
