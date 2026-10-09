@@ -1,17 +1,16 @@
 [package]
 name          = "n34"
 description   = "A CLI to interact with NIP-34 and other stuff related to code in Nostr"
-version       = "0.4.1"
-edition       = "2024"
-license       = "GPL-3.0-or-later"
 authors       = ["Awiteb <a@4rs.nl>"]
 readme        = "README.md"
-documentation = "https://n34.dev/commands.html"
-homepage      = "https://n34.dev"
-repository    = "https://github.com/gnostr-org/get_file_hash.git"
 keywords      = ["nostr", "NIP-34", "CLI"]
 categories    = ["command-line-utilities"]
-rust-version  = "1.88.0"
+rust-version  = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+documentation = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.wix]
 upgrade-guid = "5E8926D0-4A18-48E9-A070-AFB0F698F04C"
@@ -38,42 +37,42 @@ toml                       = "0.9.4"
 tracing                    = "0.1.41"
 tracing-subscriber         = "0.3.19"
 
-  [dependencies.clap]
+[dependencies.clap]
   features = ["derive"]
   version  = "4.5.42"
 
-  [dependencies.clap-verbosity-flag]
+[dependencies.clap-verbosity-flag]
   default-features = false
   features         = ["tracing"]
   version          = "3.0.3"
 
-  [dependencies.nostr]
+[dependencies.nostr]
   default-features = false
   features         = ["std"]
   version          = "0.43.0"
 
-  [dependencies.nostr-connect]
+[dependencies.nostr-connect]
   default-features = false
   version          = "0.43.0"
 
-  [dependencies.nostr-keyring]
+[dependencies.nostr-keyring]
   default-features = false
   version          = "0.43.0"
 
-  [dependencies.nostr-sdk]
+[dependencies.nostr-sdk]
   default-features = false
   version          = "0.43.0"
 
-  [dependencies.reqwest]
+[dependencies.reqwest]
   default-features = false
   features         = ["http2", "json", "rustls-tls"]
   version          = "0.12.22"
 
-  [dependencies.serde]
+[dependencies.serde]
   features = ["derive"]
   version  = "1.0.219"
 
-  [dependencies.tokio]
+[dependencies.tokio]
   features = ["macros", "rt-multi-thread"]
   version  = "1.47.1"
 
