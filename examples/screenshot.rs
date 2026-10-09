@@ -248,3 +248,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn cli_round_trips_positionals_and_flags() {
+        let args = Args::try_parse_from([
+            "screenshot",
+            "shot.png",
+            "--server",
+            "https://example.com",
+            "--nostr-sec",
+            "nsec1example00000000000000000000000000000000000000000000000000000",
+            "--relay",
+            "wss://relay.one",
+            "--relay",
+            "wss://relay.two",
+        ])
+        .expect("Args should parse");
+
+        assert_eq!(args.path.as_deref(), Some(std::path::Path::new("shot.png")));
+        assert_eq!(args.server.as_deref(), Some("https://example.com"));
+        assert_eq!(
+            args.nostr_sec.as_deref(),
+            Some("nsec1example00000000000000000000000000000000000000000000000000000")
+        );
+        assert_eq!(
+            args.relays,
+            vec!["wss://relay.one".to_string(), "wss://relay.two".to_string()]
+        );
+    }
+
+    #[test]
+    fn placeholder_png_round_trips_through_disk() {
+        let path = std::env::temp_dir().join(format!(
+            "get_file_hash-screenshot-test-{}.png",
+            std::process::id()
+        ));
+
+        fs::write(&path, PLACEHOLDER_PNG).expect("write placeholder png");
+        let bytes = fs::read(&path).expect("read placeholder png");
+        fs::remove_file(&path).ok();
+
+        assert_eq!(bytes.as_slice(), PLACEHOLDER_PNG);
+    }
+}
