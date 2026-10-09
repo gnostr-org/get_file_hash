@@ -28,9 +28,13 @@
 //!                       example uses an embedded 1x1 PNG placeholder so the
 //!                       command works out of the box.
 
+use get_file_hash_core::get_relay_urls;
 use nostr::nips::nip96;
 use nostr::prelude::*;
+use nostr_sdk::Client;
 use std::env;
+use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 use sha2::{Digest, Sha256};
 
@@ -51,16 +55,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------------
     // 2. Resolve the screenshot file path
     // ------------------------------------------------------------------
-    let file_path = env::args().nth(1);
-    let (file_path, file_data) = match file_path {
+    let file_path_arg = env::args().nth(1);
+    let (file_path, file_data) = match file_path_arg {
         Some(path) => {
             println!("Reading file: {}", path);
             (path.clone(), std::fs::read(&path)?)
         }
         None => {
-            let path = "screenshot.png".to_string();
+            let path = PathBuf::from(env::temp_dir())
+                .join(format!("get_file_hash-screenshot-{}.png", std::process::id()));
+            fs::write(&path, PLACEHOLDER_PNG)?;
             println!("No file path provided; using embedded placeholder PNG");
-            (path, PLACEHOLDER_PNG.to_vec())
+            (path.display().to_string(), PLACEHOLDER_PNG.to_vec())
         }
     };
     println!("File size: {} bytes", file_data.len());
@@ -170,9 +176,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 8. Parse and display the result
     // ------------------------------------------------------------------
     let response = nip96::UploadResponse::from_json(&upload_output.stdout)?;
+    let download_url = response.download_url()?;
     match response.download_url() {
         Ok(url) => println!("Upload successful!\nFile URL: {url}"),
         Err(e) => eprintln!("Upload response error: {e}"),
+    }
+
+    let relay_urls = get_relay_urls();
+    if !relay_urls.is_empty() {
+        let client = Client::new(keys.clone());
+        for relay_url in &relay_urls {
+            if let Err(e) = client.add_relay(relay_url).await {
+                eprintln!("Failed to add relay {}: {}", relay_url, e);
+            }
+        }
+        client.connect().await;
+
+        let note = EventBuilder::text_note(format!(
+            "Uploaded screenshot {} to {}",
+            file_path, download_url
+        ))
+        .sign_with_keys(&keys)?;
+
+        if let Err(e) = client.send_event(&note).await {
+            eprintln!("Failed to syndicate screenshot upload to relays: {}", e);
+        } else {
+            println!("Syndicated upload announcement to {} relays", relay_urls.len());
+        }
     }
 
     Ok(())
