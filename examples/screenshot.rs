@@ -339,6 +339,76 @@ mod tests {
         server.join().expect("server thread");
     }
 
+    #[tokio::test]
+    async fn live_network_round_trip_uploads_and_returns_url() {
+        let server = match std::env::var("NIP96_LIVE_TEST_SERVER") {
+            Ok(value) => value,
+            Err(_) => return,
+        };
+
+        let file_path = std::env::temp_dir().join(format!(
+            "get_file_hash-live-screenshot-{}.png",
+            std::process::id()
+        ));
+        fs::write(&file_path, PLACEHOLDER_PNG).expect("write live test png");
+
+        let keys = Keys::generate();
+        let server_url = Url::parse(&server).expect("parse live test server URL");
+        let config_url = nip96::get_server_config_url(&server_url).expect("server config url");
+
+        let config_output = Command::new("curl")
+            .args(["--silent", "--fail", "--location", config_url.as_str()])
+            .output()
+            .expect("fetch live server config");
+        assert!(
+            config_output.status.success(),
+            "live server config fetch failed: {}",
+            String::from_utf8_lossy(&config_output.stderr)
+        );
+
+        let config = nip96::ServerConfig::from_json(&config_output.stdout).expect("parse config");
+        let upload_request = nip96::UploadRequest::new(&keys, &config, PLACEHOLDER_PNG)
+            .await
+            .expect("build upload request");
+
+        let upload_output = Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                "-X",
+                "POST",
+                upload_request.url().as_str(),
+                "-H",
+                &format!("Authorization: {}", upload_request.authorization()),
+                "-F",
+                &format!("file=@{};type=image/png", file_path.display()),
+            ])
+            .output()
+            .expect("run live upload curl");
+        assert!(
+            upload_output.status.success(),
+            "live upload failed: {}",
+            String::from_utf8_lossy(&upload_output.stderr)
+        );
+
+        let response = nip96::UploadResponse::from_json(&upload_output.stdout).expect("upload response");
+        let download_url = response.download_url().expect("download url");
+
+        let download = Command::new("curl")
+            .args(["--silent", "--fail", "--location", download_url.as_str()])
+            .output()
+            .expect("run live download curl");
+        assert!(
+            download.status.success(),
+            "live download failed: {}",
+            String::from_utf8_lossy(&download.stderr)
+        );
+        assert_eq!(download.stdout.as_slice(), PLACEHOLDER_PNG);
+
+        fs::remove_file(&file_path).ok();
+    }
+
     fn handle_request(
         stream: &mut TcpStream,
         uploaded: &Arc<Mutex<Option<Vec<u8>>>>,
