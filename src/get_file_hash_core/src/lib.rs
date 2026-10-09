@@ -786,6 +786,44 @@ pub async fn publish_metadata_event(
 }
 
 #[cfg(feature = "nostr")]
+pub async fn publish_profile_metadata_event(
+    keys: &Keys,
+    relay_urls: &[String],
+    name: &str,
+    about: &str,
+    picture_url: &str,
+    banner_url: &str,
+) {
+    let client = nostr_sdk::Client::new(keys.clone());
+
+    for relay_url in relay_urls {
+        if let Err(e) = client.add_relay(relay_url).await {
+            debug!("cargo:warning=Failed to add relay for profile metadata {}: {}", relay_url, e);
+        }
+    }
+    client.connect().await;
+
+    let metadata_json = json!({
+        "picture": picture_url,
+        "banner": banner_url,
+        "name": name,
+        "about": about,
+    });
+
+    let metadata = serde_json::from_str::<nostr_sdk::Metadata>(&metadata_json.to_string())
+        .expect("Failed to parse profile metadata JSON");
+
+    let event = EventBuilder::metadata(&metadata).sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
+        Ok(_event_id) => {}
+        Err(e) => {
+            debug!("cargo:warning=Failed to publish Nostr profile metadata for {}: {}", name, e);
+        }
+    }
+}
+
+#[cfg(feature = "nostr")]
 pub async fn publish_repository_announcement_event(
     keys: &Keys,
     relay_urls: &[String],
@@ -827,6 +865,14 @@ pub async fn publish_repository_announcement_event(
     match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Repository Announcement for {}. Event ID (raw): {:?}, Event ID (bech32): {}", project_name, event_id, event_id.to_bech32().unwrap());
+            publish_profile_metadata_event(
+                keys,
+                relay_urls,
+                project_name,
+                description,
+                DEFAULT_PICTURE_URL,
+                DEFAULT_BANNER_URL,
+            ).await;
         }
         Err(e) => {
             println!("cargo:warning=Failed to publish NIP-34 Repository Announcement for {}: {}", project_name, e);
