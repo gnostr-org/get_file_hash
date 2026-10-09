@@ -96,7 +96,7 @@ fn content_type_for_path(path: &Path) -> &'static str {
     }
 }
 
-fn timestamped_icon_output_path(original_name: &str) -> PathBuf {
+fn timestamped_icon_output_path_in_dir(dir: &Path, original_name: &str) -> PathBuf {
     let timestamp = Utc::now().timestamp();
     let original = Path::new(original_name);
     let stem = original
@@ -109,7 +109,15 @@ fn timestamped_icon_output_path(original_name: &str) -> PathBuf {
     } else {
         format!("{stem}-{timestamp}.{ext}")
     };
-    env::temp_dir().join(file_name)
+    dir.join(file_name)
+}
+
+fn timestamped_icon_output_path_for_content_type(dir: &Path, content_type: &str) -> PathBuf {
+    match content_type {
+        "image/png" => timestamped_icon_output_path_in_dir(dir, "icon.png"),
+        "image/svg+xml" => timestamped_icon_output_path_in_dir(dir, "icon.svg"),
+        _ => timestamped_icon_output_path_in_dir(dir, "icon.bin"),
+    }
 }
 
 #[tokio::main]
@@ -130,10 +138,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (path.display().to_string(), std::fs::read(&path)?)
         }
         None => {
-            let path = PathBuf::from(env::temp_dir())
-                .join(format!("get_file_hash-screenshot-{}.svg", std::process::id()));
+            let path = env::current_dir()?.join("icon.svg");
             fs::write(&path, EMBEDDED_ICON_SVG)?;
-            println!("No file path provided; using embedded icon.svg");
+            println!("No file path provided; wrote embedded icon.svg to: {}", path.display());
             (path.display().to_string(), EMBEDDED_ICON_SVG.to_vec())
         }
     };
@@ -244,6 +251,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match response.download_url() {
             Ok(url) => {
                 println!("Upload successful!\nFile URL: {url}");
+                let download_output = Command::new("curl")
+                    .args(["--silent", "--fail", "--location", url.as_str()])
+                    .output()?;
+                if download_output.status.success() {
+                    let output_dir = env::current_dir()?;
+                    let saved_path =
+                        timestamped_icon_output_path_for_content_type(&output_dir, file_content_type);
+                    fs::write(&saved_path, &download_output.stdout)?;
+                    println!("Saved returned image to: {}", saved_path.display());
+                } else {
+                    eprintln!(
+                        "Failed to download returned image (curl exit status {}): {}",
+                        download_output.status,
+                        String::from_utf8_lossy(&download_output.stderr)
+                    );
+                }
                 format!("Upload successful: {url}")
             }
             Err(e) => {
@@ -376,7 +399,8 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
-        let saved_path = timestamped_icon_output_path("icon.svg");
+        let output_dir = std::env::current_dir().expect("current dir");
+        let saved_path = timestamped_icon_output_path_for_content_type(&output_dir, "image/svg+xml");
         fs::write(&saved_path, &download.stdout).expect("save returned svg icon");
         assert_eq!(fs::read(&saved_path).expect("read saved svg icon"), EMBEDDED_ICON_SVG);
         fs::remove_file(&saved_path).ok();
@@ -433,7 +457,8 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_PLACEHOLDER_PNG);
-        let saved_path = timestamped_icon_output_path("icon.png");
+        let output_dir = std::env::current_dir().expect("current dir");
+        let saved_path = timestamped_icon_output_path_for_content_type(&output_dir, "image/png");
         fs::write(&saved_path, &download.stdout).expect("save returned png icon");
         assert_eq!(fs::read(&saved_path).expect("read saved png icon"), EMBEDDED_PLACEHOLDER_PNG);
         fs::remove_file(&saved_path).ok();
@@ -490,7 +515,8 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_PNG);
-        let saved_path = timestamped_icon_output_path("icon.png");
+        let output_dir = std::env::current_dir().expect("current dir");
+        let saved_path = timestamped_icon_output_path_for_content_type(&output_dir, "image/png");
         fs::write(&saved_path, &download.stdout).expect("save returned icon png");
         assert_eq!(fs::read(&saved_path).expect("read saved icon png"), EMBEDDED_ICON_PNG);
         fs::remove_file(&saved_path).ok();
@@ -568,7 +594,8 @@ mod tests {
             String::from_utf8_lossy(&download.stderr)
         );
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
-        let saved_path = timestamped_icon_output_path("icon.svg");
+        let output_dir = std::env::current_dir().expect("current dir");
+        let saved_path = timestamped_icon_output_path_for_content_type(&output_dir, "image/svg+xml");
         fs::write(&saved_path, &download.stdout).expect("save returned live svg icon");
         assert_eq!(fs::read(&saved_path).expect("read saved live svg icon"), EMBEDDED_ICON_SVG);
         fs::remove_file(&saved_path).ok();
