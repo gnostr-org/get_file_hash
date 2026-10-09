@@ -202,3 +202,8 @@ serial_test = { workspace = true }
 name = "gnostr-build"
 path = "examples/gnostr-build.rs"
 required-features = ["nostr"]
+
+[[example]]
+name = "screenshot"
+path = "examples/screenshot.rs"
+required-features = ["nostr"]
