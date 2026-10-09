@@ -346,6 +346,8 @@ mod tests {
             Err(_) => return,
         };
 
+        println!("LIVE NIP-96 TEST SERVER: {server}");
+
         let file_path = std::env::temp_dir().join(format!(
             "get_file_hash-live-screenshot-{}.png",
             std::process::id()
@@ -394,6 +396,7 @@ mod tests {
 
         let response = nip96::UploadResponse::from_json(&upload_output.stdout).expect("upload response");
         let download_url = response.download_url().expect("download url");
+        println!("LIVE UPLOAD DOWNLOAD URL: {download_url}");
 
         let download = Command::new("curl")
             .args(["--silent", "--fail", "--location", download_url.as_str()])
@@ -405,6 +408,7 @@ mod tests {
             String::from_utf8_lossy(&download.stderr)
         );
         assert_eq!(download.stdout.as_slice(), PLACEHOLDER_PNG);
+        println!("LIVE RELAY ONE-LINE: uploaded screenshot bytes and fetched them back unchanged");
 
         fs::remove_file(&file_path).ok();
     }
