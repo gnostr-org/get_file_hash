@@ -64,8 +64,8 @@ struct Args {
     path: Option<PathBuf>,
 
     /// NIP-96 server base URL.
-    #[arg(long, value_name = "URL", default_value = "https://nostr.build")]
-    server: String,
+    #[arg(long, value_name = "URL")]
+    server: Option<String>,
 
     /// Bech32 secret key (`nsec1...`). Overrides NOSTR_SEC when set.
     #[arg(long = "nostr-sec", value_name = "NSEC")]
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------------
     let (file_path, file_data) = match args.path {
         Some(path) => {
-            println!("Reading file: {}", path);
+            println!("Reading file: {}", path.display());
             (path.display().to_string(), std::fs::read(&path)?)
         }
         None => {
@@ -101,12 +101,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------------
     // 2. Resolve signing keys
     // ------------------------------------------------------------------
-    let keys = match args.nostr_sec.as_deref().or_else(|| env::var("NOSTR_SEC").ok().as_deref()) {
+    let nostr_sec = args.nostr_sec.or_else(|| env::var("NOSTR_SEC").ok());
+    let keys = match nostr_sec.as_deref() {
         Some(nsec) => {
             println!("Using keys from NOSTR_SEC / --nostr-sec");
             Keys::parse(nsec)?
         }
-        Err(_) => {
+        None => {
             let secret_key_hex = hex::encode(Sha256::digest(&file_data));
             println!("NOSTR_SEC not set – deriving deterministic keys from file sha256");
             Keys::parse(&secret_key_hex)?
@@ -116,7 +117,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------------
     // 3. Resolve the NIP-96 server
     // ------------------------------------------------------------------
-    let server_url = Url::parse(&args.server)?;
+    let server_url = Url::parse(
+        &args
+            .server
+            .or_else(|| env::var("NIP96_SERVER").ok())
+            .unwrap_or_else(|| "https://nostr.build".to_string()),
+    )?;
     println!("NIP-96 server: {}", server_url);
 
     // ------------------------------------------------------------------
