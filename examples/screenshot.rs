@@ -47,6 +47,7 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 use sha2::{Digest, Sha256};
 
 const EMBEDDED_ICON_SVG: &[u8] = include_bytes!("../src/get_file_hash_core/src/icon.svg");
@@ -60,6 +61,8 @@ const EMBEDDED_PLACEHOLDER_PNG: &[u8] = &[
     0x02, 0x00, 0x01, 0xE5, 0x27, 0xD4, 0xA6, 0x00, 0x00, 0x00, 0x00, 0x49,
     0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
 ];
+
+static ICON_OUTPUT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Parser)]
 #[command(name = "screenshot", version, about = "Upload an image to NIP-96 and syndicate the result")]
@@ -98,6 +101,7 @@ fn content_type_for_path(path: &Path) -> &'static str {
 
 fn timestamped_icon_output_path_in_dir(dir: &Path, original_name: &str) -> PathBuf {
     let timestamp = Utc::now().timestamp();
+    let sequence = ICON_OUTPUT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     let original = Path::new(original_name);
     let stem = original
         .file_stem()
@@ -105,9 +109,9 @@ fn timestamped_icon_output_path_in_dir(dir: &Path, original_name: &str) -> PathB
         .unwrap_or("icon");
     let ext = original.extension().and_then(|value| value.to_str()).unwrap_or("");
     let file_name = if ext.is_empty() {
-        format!("{stem}-{timestamp}")
+        format!("{stem}-{timestamp}-{sequence}")
     } else {
-        format!("{stem}-{timestamp}.{ext}")
+        format!("{stem}-{timestamp}-{sequence}.{ext}")
     };
     dir.join(file_name)
 }
@@ -127,13 +131,12 @@ fn timestamped_icon_output_path_for_download_url(dir: &Path, download_url: &Url)
         .and_then(|filename| Path::new(filename).extension())
         .and_then(|value| value.to_str())
         .unwrap_or("");
-    let timestamp = Utc::now().timestamp();
-    let file_name = if ext.is_empty() {
-        format!("icon-{timestamp}")
+    let original_name = if ext.is_empty() {
+        "icon".to_string()
     } else {
-        format!("icon-{timestamp}.{ext}")
+        format!("icon.{ext}")
     };
-    dir.join(file_name)
+    timestamped_icon_output_path_in_dir(dir, &original_name)
 }
 
 fn extract_multipart_file_bytes(bytes: &[u8]) -> &[u8] {
