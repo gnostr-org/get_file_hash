@@ -19,6 +19,7 @@ banner "screenshot example mock round-trip tests"
 run_test cli_round_trips_positionals_and_flags
 run_test icon_svg_round_trips_over_http
 run_test png_round_trips_over_http
+run_test real_icon_png_round_trips_over_http
 
 if [ -n "${NIP96_LIVE_TEST_SERVER:-}" ]; then
     banner "screenshot example live network round-trip test"

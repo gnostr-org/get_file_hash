@@ -50,6 +50,7 @@ use sha2::{Digest, Sha256};
 
 const EMBEDDED_ICON_SVG: &[u8] = include_bytes!("../src/get_file_hash_core/src/icon.svg");
 const EMBEDDED_ICON_SVG_CONTENT_TYPE: &str = "image/svg+xml";
+const EMBEDDED_ICON_PNG: &[u8] = include_bytes!("../src/get_file_hash_core/src/icon.png");
 const EMBEDDED_PLACEHOLDER_PNG: &[u8] = &[
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
     0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
@@ -411,6 +412,59 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_PLACEHOLDER_PNG);
+
+        fs::remove_file(&input_path).ok();
+        server.join().expect("server thread");
+    }
+
+    #[test]
+    fn real_icon_png_round_trips_over_http() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let uploaded = Arc::new(Mutex::new(None::<Vec<u8>>));
+        let uploaded_for_server = Arc::clone(&uploaded);
+
+        let server = thread::spawn(move || {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().expect("accept connection");
+                handle_request(&mut stream, &uploaded_for_server).expect("handle request");
+            }
+        });
+
+        let input_path = std::env::temp_dir().join(format!(
+            "get_file_hash-real-icon-test-{}.png",
+            std::process::id()
+        ));
+        fs::write(&input_path, EMBEDDED_ICON_PNG).expect("write embedded icon png");
+
+        let upload_status = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                "-X",
+                "POST",
+                &format!("http://{addr}/upload"),
+                "--data-binary",
+                &format!("@{}", input_path.display()),
+                "-H",
+                "Content-Type: image/png",
+            ])
+            .status()
+            .expect("run upload curl");
+        assert!(upload_status.success(), "upload curl failed: {upload_status}");
+
+        let download = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                &format!("http://{addr}/image.png"),
+            ])
+            .output()
+            .expect("run download curl");
+        assert!(download.status.success(), "download curl failed: {}", download.status);
+        assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_PNG);
 
         fs::remove_file(&input_path).ok();
         server.join().expect("server thread");
