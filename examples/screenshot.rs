@@ -1,6 +1,6 @@
 //! NIP-96 Screenshot Upload Example
 //!
-//! Demonstrates how to upload a screenshot (PNG) to a NIP-96 compliant file
+//! Demonstrates how to upload a screenshot or image to a NIP-96 compliant file
 //! storage server using the `nostr` crate for authentication.
 //!
 //! The NIP-98 HTTP Auth header is constructed by the `nostr` crate; the
@@ -20,8 +20,8 @@
 //! # CLI arguments and environment variables
 //!
 //! * `PATH`            – Optional screenshot file path. When omitted, the
-//!                       example uses an embedded 1x1 PNG placeholder so the
-//!                       command works out of the box.
+//!                       example uses the embedded `icon.svg` asset so the
+//!                       command works out of the box with a real image.
 //! * `--server`        – NIP-96 server base URL. Defaults to `https://nostr.build`.
 //! * `--nostr-sec`     – Bech32-encoded secret key (`nsec1...`). When omitted,
 //!                       the example falls back to `NOSTR_SEC`, then the file
@@ -31,7 +31,7 @@
 //! # Environment variables
 //!
 //! * `NOSTR_SEC`       – bech32-encoded secret key (`nsec1...`).  When absent
-//!                       the screenshot or placeholder PNG SHA-256 is used as
+//!                       the screenshot or embedded image SHA-256 is used as
 //!                       a deterministic private key.
 //! * `NIP96_SERVER`    – NIP-96 server base URL.
 //!                       Defaults to `https://nostr.build`.
@@ -43,11 +43,14 @@ use nostr::prelude::*;
 use nostr_sdk::Client;
 use std::env;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use sha2::{Digest, Sha256};
 
-const PLACEHOLDER_PNG: &[u8] = &[
+const EMBEDDED_ICON_SVG: &[u8] = include_bytes!("../src/get_file_hash_core/src/icon.svg");
+const EMBEDDED_ICON_SVG_CONTENT_TYPE: &str = "image/svg+xml";
+const EMBEDDED_PLACEHOLDER_PNG: &[u8] = &[
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
     0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
     0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
@@ -57,9 +60,9 @@ const PLACEHOLDER_PNG: &[u8] = &[
 ];
 
 #[derive(Debug, Parser)]
-#[command(name = "screenshot", version, about = "Upload a PNG screenshot to NIP-96 and syndicate the result")]
+#[command(name = "screenshot", version, about = "Upload an image to NIP-96 and syndicate the result")]
 struct Args {
-    /// Screenshot file path. When omitted, a placeholder PNG is used.
+    /// Screenshot file path. When omitted, the embedded icon.svg is used.
     #[arg(value_name = "PATH")]
     path: Option<PathBuf>,
 
@@ -76,9 +79,29 @@ struct Args {
     relays: Vec<String>,
 }
 
+fn content_type_for_path(path: &Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("svg") => "image/svg+xml",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        _ => "application/octet-stream",
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    let file_content_type = args
+        .path
+        .as_deref()
+        .map(content_type_for_path)
+        .unwrap_or(EMBEDDED_ICON_SVG_CONTENT_TYPE);
 
     // ------------------------------------------------------------------
     // 1. Resolve the screenshot file path
@@ -90,10 +113,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             let path = PathBuf::from(env::temp_dir())
-                .join(format!("get_file_hash-screenshot-{}.png", std::process::id()));
-            fs::write(&path, PLACEHOLDER_PNG)?;
-            println!("No file path provided; using embedded placeholder PNG");
-            (path.display().to_string(), PLACEHOLDER_PNG.to_vec())
+                .join(format!("get_file_hash-screenshot-{}.svg", std::process::id()));
+            fs::write(&path, EMBEDDED_ICON_SVG)?;
+            println!("No file path provided; using embedded icon.svg");
+            (path.display().to_string(), EMBEDDED_ICON_SVG.to_vec())
         }
     };
     println!("File size: {} bytes", file_data.len());
@@ -169,10 +192,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "  curl -X POST '{}' \\\n    \
          -H 'Authorization: {}' \\\n    \
-         -F 'file=@{};type=image/png'",
+         -F 'file=@{};type={}'",
         upload_request.url(),
         upload_request.authorization(),
-        file_path
+        file_path,
+        file_content_type
     );
 
     // ------------------------------------------------------------------
@@ -190,7 +214,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "-H",
             &format!("Authorization: {}", upload_request.authorization()),
             "-F",
-            &format!("file=@{};type=image/png", file_path),
+            &format!("file=@{};type={}", file_path, file_content_type),
         ])
         .output()?;
 
@@ -287,7 +311,60 @@ mod tests {
     }
 
     #[test]
-    fn placeholder_png_round_trips_over_http() {
+    fn icon_svg_round_trips_over_http() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let uploaded = Arc::new(Mutex::new(None::<Vec<u8>>));
+        let uploaded_for_server = Arc::clone(&uploaded);
+
+        let server = thread::spawn(move || {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().expect("accept connection");
+                handle_request(&mut stream, &uploaded_for_server).expect("handle request");
+            }
+        });
+
+        let input_path = std::env::temp_dir().join(format!(
+            "get_file_hash-screenshot-test-{}.svg",
+            std::process::id()
+        ));
+        fs::write(&input_path, EMBEDDED_ICON_SVG).expect("write embedded icon svg");
+
+        let upload_status = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                "-X",
+                "POST",
+                &format!("http://{addr}/upload"),
+                "--data-binary",
+                &format!("@{}", input_path.display()),
+                "-H",
+                "Content-Type: image/svg+xml",
+            ])
+            .status()
+            .expect("run upload curl");
+        assert!(upload_status.success(), "upload curl failed: {upload_status}");
+
+        let download = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                &format!("http://{addr}/image.svg"),
+            ])
+            .output()
+            .expect("run download curl");
+        assert!(download.status.success(), "download curl failed: {}", download.status);
+        assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
+
+        fs::remove_file(&input_path).ok();
+        server.join().expect("server thread");
+    }
+
+    #[test]
+    fn png_round_trips_over_http() {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
         let addr = listener.local_addr().expect("local addr");
         let uploaded = Arc::new(Mutex::new(None::<Vec<u8>>));
@@ -304,7 +381,7 @@ mod tests {
             "get_file_hash-screenshot-test-{}.png",
             std::process::id()
         ));
-        fs::write(&input_path, PLACEHOLDER_PNG).expect("write placeholder png");
+        fs::write(&input_path, EMBEDDED_PLACEHOLDER_PNG).expect("write embedded placeholder png");
 
         let upload_status = std::process::Command::new("curl")
             .args([
@@ -333,7 +410,7 @@ mod tests {
             .output()
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
-        assert_eq!(download.stdout.as_slice(), PLACEHOLDER_PNG);
+        assert_eq!(download.stdout.as_slice(), EMBEDDED_PLACEHOLDER_PNG);
 
         fs::remove_file(&input_path).ok();
         server.join().expect("server thread");
@@ -349,10 +426,10 @@ mod tests {
         println!("LIVE NIP-96 TEST SERVER: {server}");
 
         let file_path = std::env::temp_dir().join(format!(
-            "get_file_hash-live-screenshot-{}.png",
+            "get_file_hash-live-screenshot-{}.svg",
             std::process::id()
         ));
-        fs::write(&file_path, PLACEHOLDER_PNG).expect("write live test png");
+        fs::write(&file_path, EMBEDDED_ICON_SVG).expect("write live test svg");
 
         let keys = Keys::generate();
         let server_url = Url::parse(&server).expect("parse live test server URL");
@@ -369,7 +446,7 @@ mod tests {
         );
 
         let config = nip96::ServerConfig::from_json(&config_output.stdout).expect("parse config");
-        let upload_request = nip96::UploadRequest::new(&keys, &config, PLACEHOLDER_PNG)
+        let upload_request = nip96::UploadRequest::new(&keys, &config, EMBEDDED_ICON_SVG)
             .await
             .expect("build upload request");
 
@@ -384,7 +461,7 @@ mod tests {
                 "-H",
                 &format!("Authorization: {}", upload_request.authorization()),
                 "-F",
-                &format!("file=@{};type=image/png", file_path.display()),
+                &format!("file=@{};type={}", file_path.display(), EMBEDDED_ICON_SVG_CONTENT_TYPE),
             ])
             .output()
             .expect("run live upload curl");
@@ -407,7 +484,7 @@ mod tests {
             "live download failed: {}",
             String::from_utf8_lossy(&download.stderr)
         );
-        assert_eq!(download.stdout.as_slice(), PLACEHOLDER_PNG);
+        assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
         println!("LIVE RELAY ONE-LINE: uploaded screenshot bytes and fetched them back unchanged");
 
         fs::remove_file(&file_path).ok();
@@ -422,6 +499,14 @@ mod tests {
             ("POST", "/upload") => {
                 *uploaded.lock().expect("lock upload buffer") = Some(body);
                 write_http_response(stream, 200, "text/plain", b"ok")?;
+            }
+            ("GET", "/image.svg") => {
+                let svg = uploaded
+                    .lock()
+                    .expect("lock upload buffer")
+                    .clone()
+                    .expect("uploaded svg available");
+                write_http_response(stream, 200, "image/svg+xml", &svg)?;
             }
             ("GET", "/image.png") => {
                 let png = uploaded
