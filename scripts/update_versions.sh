@@ -365,28 +365,10 @@ echo "Local path dependency versions synchronized."
 # crate that depends on them. Dev-dependency cycles (e.g. asyncgit <-> ngit)
 # cannot be resolved by ordering alone and are left to --no-verify / retry.
 PUBLISH_CRATES=(
-    filetreelist
-    git-helpers
-    git2-hooks
-    grammar
-    invalidstring
-    relay
-    scopetime
-    types
-    asyncgit/src/lib/filehash/core
-    qr
-    relay/extensions
-    asyncgit
-    crawler
-    legit
-    js
-    ngit
-    p2p
-    web
-    chat
     .
-    nips
-    bins
+    ./src/get_file_hash_core
+    n34
+    n34-relay
 )
 
 for crate in "${PUBLISH_CRATES[@]}"; do
@@ -394,8 +376,7 @@ for crate in "${PUBLISH_CRATES[@]}"; do
 done
 
 PUBLISH_NO_VERIFY_CRATES=(
-    asyncgit
-    types
+
 )
 
 should_skip_verify() {
