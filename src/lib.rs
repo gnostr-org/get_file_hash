@@ -12,7 +12,9 @@ use get_file_hash_core::get_relay_urls;
 #[cfg(feature = "nostr")]
 use nostr::nips::nip96;
 #[cfg(feature = "nostr")]
-use nostr_sdk::{Event, EventBuilder, EventId, Keys, Tag, UnsignedEvent};
+use nostr::prelude::*;
+#[cfg(feature = "nostr")]
+use sha2::Digest;
 #[cfg(feature = "nostr")]
 use std::env;
 #[cfg(feature = "nostr")]
@@ -23,9 +25,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 #[cfg(feature = "nostr")]
 use std::process::Command;
-#[cfg(feature = "nostr")]
-use url::Url;
-
 #[cfg(feature = "nostr")]
 const DEFAULT_MAX_POW_ATTEMPTS: u128 = 100_000_000;
 
