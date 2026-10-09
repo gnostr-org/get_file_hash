@@ -163,24 +163,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .output()?;
 
-    if !upload_output.status.success() {
+    let upload_summary = if upload_output.status.success() {
+        // ------------------------------------------------------------------
+        // 8. Parse and display the result
+        // ------------------------------------------------------------------
+        let response = nip96::UploadResponse::from_json(&upload_output.stdout)?;
+        match response.download_url() {
+            Ok(url) => {
+                println!("Upload successful!\nFile URL: {url}");
+                format!("Upload successful: {url}")
+            }
+            Err(e) => {
+                eprintln!("Upload response error: {e}");
+                format!("Upload response error: {e}")
+            }
+        }
+    } else {
+        let stderr = String::from_utf8_lossy(&upload_output.stderr);
         eprintln!(
             "Upload failed (curl exit status {}): {}",
             upload_output.status,
-            String::from_utf8_lossy(&upload_output.stderr)
+            stderr
         );
-        return Ok(());
-    }
-
-    // ------------------------------------------------------------------
-    // 8. Parse and display the result
-    // ------------------------------------------------------------------
-    let response = nip96::UploadResponse::from_json(&upload_output.stdout)?;
-    let download_url = response.download_url()?;
-    match response.download_url() {
-        Ok(url) => println!("Upload successful!\nFile URL: {url}"),
-        Err(e) => eprintln!("Upload response error: {e}"),
-    }
+        format!("Upload failed (curl exit status {}): {}", upload_output.status, stderr)
+    };
 
     let relay_urls = get_relay_urls();
     if !relay_urls.is_empty() {
@@ -193,8 +199,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client.connect().await;
 
         let note = EventBuilder::text_note(format!(
-            "Uploaded screenshot {} to {}",
-            file_path, download_url
+            "Screenshot upload result for {}: {}",
+            file_path, upload_summary
         ))
         .sign_with_keys(&keys)?;
 
