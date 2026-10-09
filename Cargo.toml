@@ -18,7 +18,7 @@ eula = false
 members = [".", "n34", "n34-relay", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "0.5.3"
+version = "0.5.4"
 edition = "2024"
 license = "MIT"
 authors = ["gnostr admin@gnostr.org"]
@@ -37,7 +37,7 @@ easy-ext                   = "1.0.2"
 either                     = "1.15.0"
 frost-secp256k1-tr = "3.0.0-rc.0"
 futures                    = "0.3.31"
-get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.5.3" }
+get_file_hash_core = { features = ["nostr"], path = "src/get_file_hash_core", version = "0.5.4" }
 
 hex = "0.4.2"
 log = "0.4"
