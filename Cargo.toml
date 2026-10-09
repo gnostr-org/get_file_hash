@@ -18,7 +18,7 @@ eula = false
 members = [".", "n34", "n34-relay", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "970572.1845.807954"
+version = "970572.1845.808019"
 rust-version = "1.88.0"
 edition = "2024"
 license = "MIT"

@@ -383,6 +383,10 @@ should_skip_verify() {
     local crate="$1"
     local candidate
 
+    if [ -z "${PUBLISH_NO_VERIFY_CRATES[*]-}" ]; then
+        return 1
+    fi
+
     for candidate in "${PUBLISH_NO_VERIFY_CRATES[@]}"; do
         if [ "$candidate" = "$crate" ]; then
             return 0
