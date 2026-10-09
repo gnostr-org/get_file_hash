@@ -142,7 +142,7 @@ async fn main() {
         // Initialize client and keys once
         let initial_secret_key = SecretKey::parse(&padded_commit_hash).expect("Failed to create Nostr SecretKey from PADDED_COMMIT_HASH");
         let initial_keys = Keys::new(initial_secret_key);
-        println!("cargo:rustc-env=NSEC={}", initial_keys.secret_key().expect("Failed to derive Nostr nsec").to_bech32().expect("Failed to encode Nostr nsec"));
+        println!("cargo:rustc-env=NSEC={}", initial_keys.secret_key().to_bech32().expect("Failed to encode Nostr nsec"));
         println!("cargo:rustc-env=NPUB={}", initial_keys.public_key().to_bech32().expect("Failed to encode Nostr npub"));
         let mut client = nostr_sdk::Client::new(initial_keys.clone());
         let mut relay_urls = get_file_hash_core::get_relay_urls();
