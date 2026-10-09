@@ -1,3 +1,4 @@
+use log::{info, debug};
 #[cfg(feature = "nostr")]
 use serde_json::to_string;
 use std::process::Command;
@@ -156,15 +157,15 @@ pub fn write_event_json_to_file(
     let file_path = output_dir.join(filename);
     if let Some(parent) = file_path.parent() {
         if let Err(e) = fs::create_dir_all(parent) {
-            println!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
+            debug!("cargo:warning=Failed to create parent directories for {}: {}", file_path.display(), e);
             return None;
         }
     }
     if let Err(e) = fs::File::create(&file_path).and_then(|mut file| write!(file, "{}", event.as_json())) {
-        println!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
+        debug!("cargo:warning=Failed to write event JSON to file {}: {}", file_path.display(), e);
         None
     } else {
-        println!("Successfully wrote event JSON to {}", file_path.display());
+        info!("Successfully wrote event JSON to {}", file_path.display());
         Some(())
     }
 }
@@ -198,9 +199,9 @@ pub async fn publish_nostr_event_if_release(
             for (relay_url, error_msg) in event_output.failed.iter() {
                 if should_remove_relay(error_msg) {
                     if let Err(e) = client.remove_relay(relay_url).await {
-                        println!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
+                        debug!("cargo:warning=Failed to remove relay {}: {}", relay_url, e);
                     }
-                     // println!("cargo:warning=Removed relay {}", relay_url);
+                    info!("cargo:warning=Removed relay {}", relay_url);
                 }
             }
 
@@ -209,7 +210,7 @@ pub async fn publish_nostr_event_if_release(
             Some(event_output.val)
         },
         Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
+            debug!("cargo:warning=Failed to publish Nostr event for {}: {}", file_path_str, e);
             None
         },
     }
@@ -260,7 +261,7 @@ pub async fn get_repo_announcement_event(
             Some(event_output.val)
         },
         Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            debug!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
             None
         },
     }
@@ -300,7 +301,7 @@ pub async fn publish_repo_patch_event(
             Some(event_output.val)
         },
         Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
+            debug!("cargo:warning=Failed to publish Nostr Repository Announcement for {}: {}", repo_name, e);
             None
         },
     }
@@ -738,7 +739,7 @@ pub fn get_git_tracked_files(dir: &PathBuf) -> Vec<String> {
             Vec::new()
         }
         Err(e) => {
-            println!("cargo:warning=Failed to execute git ls-files: {}", e);
+            debug!("cargo:warning=Failed to execute git ls-files: {}", e);
             Vec::new()
         }
     }
@@ -756,7 +757,7 @@ pub async fn publish_metadata_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for metadata {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -779,7 +780,7 @@ pub async fn publish_metadata_event(
             //println!("cargo:warning=Published Nostr metadata event for {}: {:?}", file_path_str, event_id);
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);
+            debug!("cargo:warning=Failed to publish Nostr metadata event for {}: {}", file_path_str, e);
         }
     }
 }
@@ -799,7 +800,7 @@ pub async fn publish_repository_announcement_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for repository announcement {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for repository announcement {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -846,7 +847,7 @@ pub async fn publish_patch_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for patch {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for patch {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -872,7 +873,7 @@ pub async fn publish_patch_event(
             println!("cargo:warning=\nPublished NIP-34 Patch event for commit {}.\nEvent ID (raw): {:?},\nEvent ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
+            debug!("cargo:warning=Failed to publish NIP-34 Patch event for commit {}: {}", commit_id, e);
         }
     }
 }
@@ -891,7 +892,7 @@ pub async fn publish_pull_request_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for pull request {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for pull request {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -922,7 +923,7 @@ pub async fn publish_pull_request_event(
             println!("cargo:warning=Published NIP-34 Pull Request event for commit {}. Event ID (raw): {:?}, Event ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish NIP-34 Pull Request event for commit {}: {}", commit_id, e);
+            debug!("cargo:warning=Failed to publish NIP-34 Pull Request event for commit {}: {}", commit_id, e);
         }
     }
 }
@@ -941,7 +942,7 @@ pub async fn publish_pr_update_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for PR update {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for PR update {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -969,7 +970,7 @@ pub async fn publish_pr_update_event(
             println!("cargo:warning=Published NIP-34 PR Update event for PR {} (raw: {:?}). Event ID (raw): {:?}, Event ID (bech32): {}", pr_event_id.to_bech32().unwrap(), pr_event_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish NIP-34 PR Update event for PR {}: {}", pr_event_id.to_string(), e);
+            debug!("cargo:warning=Failed to publish NIP-34 PR Update event for PR {}: {}", pr_event_id.to_string(), e);
         }
     }
 }
@@ -986,7 +987,7 @@ pub async fn publish_repository_state_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for repository state {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for repository state {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -1007,7 +1008,7 @@ pub async fn publish_repository_state_event(
             println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}). Event ID (raw): {:?}, Event ID (bech32): {}", branch_name, commit_id, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish NIP-34 Repository State event for branch {} (commit {}): {}", branch_name, commit_id, e);
+            debug!("cargo:warning=Failed to publish NIP-34 Repository State event for branch {} (commit {}): {}", branch_name, commit_id, e);
         }
     }
 }
@@ -1026,7 +1027,7 @@ pub async fn publish_issue_event(
 
     for relay_url in relay_urls {
         if let Err(e) = client.add_relay(relay_url).await {
-            println!("cargo:warning=Failed to add relay for issue {}: {}", relay_url, e);
+            debug!("cargo:warning=Failed to add relay for issue {}: {}", relay_url, e);
         }
     }
     client.connect().await;
@@ -1053,7 +1054,7 @@ pub async fn publish_issue_event(
             println!("cargo:warning=Published NIP-34 Issue event for issue {} ({}). Event ID (raw): {:?}, Event ID (bech32): {}", issue_id, title, event_id, event_id.to_bech32().unwrap());
         }
         Err(e) => {
-            println!("cargo:warning=Failed to publish NIP-34 Issue event for issue {} ({}): {}", issue_id, title, e);
+            debug!("cargo:warning=Failed to publish NIP-34 Issue event for issue {} ({}): {}", issue_id, title, e);
         }
     }
 }

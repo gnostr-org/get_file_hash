@@ -43,6 +43,7 @@ frost = [
 csv = { workspace = true, optional = true }
 frost-secp256k1-tr = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
+log.workspace = true
 nostr = { workspace = true, optional = true }
 nostr-sdk = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
