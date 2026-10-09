@@ -120,6 +120,33 @@ fn timestamped_icon_output_path_for_content_type(dir: &Path, content_type: &str)
     }
 }
 
+fn extract_multipart_file_bytes(bytes: &[u8]) -> &[u8] {
+    let first_line_end = match bytes.windows(2).position(|window| window == b"\r\n") {
+        Some(pos) => pos,
+        None => return bytes,
+    };
+
+    if !bytes.starts_with(b"--") {
+        return bytes;
+    }
+
+    let boundary = &bytes[2..first_line_end];
+    let header_end = match bytes.windows(4).position(|window| window == b"\r\n\r\n") {
+        Some(pos) => pos + 4,
+        None => return bytes,
+    };
+
+    let mut terminator = Vec::with_capacity(boundary.len() + 6);
+    terminator.extend_from_slice(b"\r\n--");
+    terminator.extend_from_slice(boundary);
+    terminator.extend_from_slice(b"--");
+
+    match bytes.windows(terminator.len()).rposition(|window| window == terminator.as_slice()) {
+        Some(end) if end >= header_end => &bytes[header_end..end],
+        _ => bytes,
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -258,7 +285,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let output_dir = env::current_dir()?;
                     let saved_path =
                         timestamped_icon_output_path_for_content_type(&output_dir, file_content_type);
-                    fs::write(&saved_path, &download_output.stdout)?;
+                    let image_bytes = extract_multipart_file_bytes(&download_output.stdout);
+                    fs::write(&saved_path, image_bytes)?;
                     println!("Saved returned image to: {}", saved_path.display());
                 } else {
                     eprintln!(
