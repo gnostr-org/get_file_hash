@@ -1,4 +1,4 @@
-use log::{info, debug};
+use log::{debug, error, info, warn};
 #[cfg(feature = "nostr")]
 use serde_json::to_string;
 use std::process::Command;
@@ -117,14 +117,14 @@ pub fn get_relay_urls() -> Vec<String> {
                         match Url::parse(&full_url_str) {
                             Ok(url) if url.scheme() == "wss" => Some(url.to_string()),
                             _ => {
-                                eprintln!("Warning: Invalid or unsupported relay URL scheme: {}", full_url_str);
+                                warn!("Invalid or unsupported relay URL scheme: {}", full_url_str);
                                 None
                             }
                         }
                     })
                 },
                 Err(e) => {
-                    eprintln!("Error reading CSV record: {}", e);
+                    error!("Error reading CSV record: {}", e);
                     None
                 }
             }
