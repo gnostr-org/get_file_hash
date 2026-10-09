@@ -6,11 +6,7 @@
 pub use get_file_hash_core::get_file_hash;
 
 #[cfg(feature = "nostr")]
-use nostr_sdk::prelude::{Event, EventBuilder, EventId, Keys, Tag, UnsignedEvent};
-#[cfg(feature = "nostr")]
-use nostr::event::FinalizeUnsignedEvent;
-#[cfg(feature = "nostr")]
-use nostr::event::FinalizeEvent;
+use nostr_sdk::{Event, EventBuilder, EventId, Keys, Tag, UnsignedEvent};
 
 #[cfg(feature = "nostr")]
 const DEFAULT_MAX_POW_ATTEMPTS: u128 = 100_000_000;
@@ -59,11 +55,11 @@ pub fn mine_event_with_prefix(
         let mut attempt = builder.clone();
         attempt = attempt.tag(Tag::pow(nonce, 0));
 
-        let mut unsigned: UnsignedEvent = attempt.finalize_unsigned(pubkey);
+        let mut unsigned: UnsignedEvent = attempt.build(pubkey);
         let id: EventId = unsigned.id();
 
         if id.to_hex().starts_with(&prefix) {
-            return unsigned.finalize(keys).ok();
+            return unsigned.sign_with_keys(keys).ok();
         }
 
         nonce += 1;
