@@ -410,15 +410,24 @@ tag_package_versions() {
 
     tree="$(git rev-parse HEAD^{tree})"
     for crate in "${PUBLISH_CRATES[@]}"; do
-        if [ "$crate" = "." ]; then
-            tag="gnostr/v$version"
-        else
-            crate_tag="${crate#./}"
-            tag="${crate_tag%/}/v$version"
-        fi
+        crate_tag="$(normalize_crate_tag "$crate")"
+        tag="${crate_tag}/v$version"
         commit="$(printf '%s\n' "$tag" | git commit-tree "$tree" -p HEAD)"
         git tag -f "$tag" "$commit"
     done
+}
+
+normalize_crate_tag() {
+    local crate="$1"
+
+    if [ "$crate" = "." ]; then
+        printf '%s\n' "gnostr"
+        return
+    fi
+
+    crate="${crate#./}"
+    crate="${crate%/}"
+    printf '%s\n' "$crate"
 }
 
 manifest_paths=()
@@ -482,8 +491,8 @@ git push origin "+refs/notes/*:refs/notes/*" || \
     echo "Warning: failed to push git notes (non-fast-forward or denied by remote)"
 
 for crate in "${PUBLISH_CRATES[@]}"; do
-    git push origin "$crate/v$WORKSPACE_VERSION:$crate/v$WORKSPACE_VERSION" -f
+    crate_tag="$(normalize_crate_tag "$crate")"
+    git push origin "$crate_tag/v$WORKSPACE_VERSION:$crate_tag/v$WORKSPACE_VERSION" -f
 done
-git push origin "gnostr/v$WORKSPACE_VERSION:gnostr/v$WORKSPACE_VERSION" -f
 echo;
 git push origin v$WORKSPACE_VERSION:v$WORKSPACE_VERSION -f
