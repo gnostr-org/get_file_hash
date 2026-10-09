@@ -17,7 +17,7 @@
 use std::{collections::BTreeSet, sync::Arc};
 
 use either::Either;
-use nostr::{event::Event, filter::Filter, message::MachineReadablePrefix, util::BoxedFuture};
+use nostr::{event::Event, filter::Filter, util::BoxedFuture};
 use nostr_relay_builder::builder::{
     QueryPolicy,
     PolicyResult,

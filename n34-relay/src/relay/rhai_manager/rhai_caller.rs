@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/agpl-3.0>.
 
 use either::Either;
-use nostr::{event::Event, filter::Filter, message::MachineReadablePrefix, util::BoxedFuture};
+use nostr::{event::Event, filter::Filter, util::BoxedFuture};
 use nostr_relay_builder::builder::{
     QueryPolicy,
     PolicyResult,

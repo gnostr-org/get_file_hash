@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://gnu.org/licenses/agpl-3.0>.
 
-use nostr::{event::Event, message::MachineReadablePrefix, util::BoxedFuture};
+use nostr::{event::Event, util::BoxedFuture};
 use nostr_relay_builder::builder::PolicyResult;
 
 use crate::relay::plugins_manager::RelayPlugin;

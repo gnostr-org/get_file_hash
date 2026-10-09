@@ -19,7 +19,6 @@ use std::sync::Arc;
 use nostr::{
     event::{Event, EventId, Kind, Tag, TagKind, TagStandard},
     filter::{Alphabet, Filter, SingleLetterTag},
-    message::MachineReadablePrefix,
     nips::{nip01::Coordinate, nip19::ToBech32},
     util::BoxedFuture,
 };

@@ -21,7 +21,6 @@ use hyper::{
     HeaderMap,
     header::{self, AsHeaderName},
 };
-use nostr::message::MachineReadablePrefix;
 use nostr_relay_builder::builder::PolicyResult;
 use parking_lot::RwLock;
 
@@ -104,7 +103,6 @@ pub impl PolicyResult {
     where
         S: Into<Cow<'static, str>>,
     {
-        let _ = MachineReadablePrefix::Blocked;
         PolicyResult::Reject(msg.into().into_owned())
     }
 }
