@@ -1391,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "get_file_hash"
-version = "970580.1845.799030"
+version = "970589.1845.787592"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -1446,7 +1446,7 @@ dependencies = [
 
 [[package]]
 name = "get_file_hash_core"
-version = "970580.1845.799030"
+version = "970589.1845.787592"
 dependencies = [
  "csv",
  "frost-secp256k1-tr",
@@ -1518,7 +1518,7 @@ dependencies = [
 
 [[package]]
 name = "gnostr-n34"
-version = "970580.1845.799030"
+version = "970589.1845.787592"
 dependencies = [
  "chrono",
  "clap",
@@ -1546,7 +1546,7 @@ dependencies = [
 
 [[package]]
 name = "gnostr-n34-relay"
-version = "970580.1845.799030"
+version = "970589.1845.787592"
 dependencies = [
  "axum",
  "base64 0.22.1",
