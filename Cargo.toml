@@ -46,7 +46,7 @@ gnostr-n34-relay = { version = ">=970629.1845.739968", path = "n34-relay" }
 
 hex = "0.4.2"
 log = "0.4"
-nostr = { version = "0.44.2", features = ["std", "nip46", "nip96"] }
+nostr = { version = "0.44.2", default-features = false, features = ["std", "nip46", "nip96"] }
 nostr-browser-signer-proxy = "0.43.0"
 nostr-database = { version = "0.44.0", default-features = false }
 nostr-lmdb = { version = "0.44.0", default-features = false }
