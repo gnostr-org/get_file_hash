@@ -13,15 +13,15 @@
 //! # Upload screenshot.png using NOSTR_SEC for signing
 //! NOSTR_SEC=nsec1... cargo run --example screenshot --features nostr -- screenshot.png
 //!
-//! # Dry-run (ephemeral keys, prints the auth header and curl command)
+//! # Use the screenshot hash as the signing key when NOSTR_SEC is unset
 //! cargo run --example screenshot --features nostr
 //! ```
 //!
 //! # Environment variables
 //!
 //! * `NOSTR_SEC`       – bech32-encoded secret key (`nsec1...`).  When absent
-//!                       an ephemeral key pair is generated and the upload is
-//!                       skipped (dry-run mode).
+//!                       the screenshot or placeholder PNG SHA-256 is used as
+//!                       a deterministic private key.
 //! * `NIP96_SERVER`    – NIP-96 server base URL.
 //!                       Defaults to `https://nostr.build`.
 //! * `PATH`            – Optional screenshot file path. When omitted, the
@@ -32,6 +32,7 @@ use nostr::nips::nip96;
 use nostr::prelude::*;
 use std::env;
 use std::process::Command;
+use sha2::{Digest, Sha256};
 
 const PLACEHOLDER_PNG: &[u8] = &[
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
@@ -47,19 +48,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------------
     // 1. Resolve signing keys
     // ------------------------------------------------------------------
-    let (keys, dry_run) = match env::var("NOSTR_SEC") {
-        Ok(nsec) => {
-            println!("Using keys from NOSTR_SEC");
-            (Keys::parse(&nsec)?, false)
-        }
-        Err(_) => {
-            eprintln!(
-                "NOSTR_SEC not set – generating ephemeral keys (dry-run, no upload)"
-            );
-            (Keys::generate(), true)
-        }
-    };
-
     // ------------------------------------------------------------------
     // 2. Resolve the screenshot file path
     // ------------------------------------------------------------------
@@ -78,7 +66,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("File size: {} bytes", file_data.len());
 
     // ------------------------------------------------------------------
-    // 3. Resolve the NIP-96 server
+    // 3. Resolve signing keys
+    // ------------------------------------------------------------------
+    let keys = match env::var("NOSTR_SEC") {
+        Ok(nsec) => {
+            println!("Using keys from NOSTR_SEC");
+            Keys::parse(&nsec)?
+        }
+        Err(_) => {
+            let secret_key_hex = hex::encode(Sha256::digest(&file_data));
+            println!("NOSTR_SEC not set – deriving deterministic keys from file sha256");
+            Keys::parse(&secret_key_hex)?
+        }
+    };
+
+    // ------------------------------------------------------------------
+    // 4. Resolve the NIP-96 server
     // ------------------------------------------------------------------
     let server_url = Url::parse(
         &env::var("NIP96_SERVER").unwrap_or_else(|_| "https://nostr.build".to_string()),
@@ -86,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("NIP-96 server: {}", server_url);
 
     // ------------------------------------------------------------------
-    // 4. Fetch server configuration (/.well-known/nostr/nip96.json)
+    // 5. Fetch server configuration (/.well-known/nostr/nip96.json)
     // ------------------------------------------------------------------
     let config_url = nip96::get_server_config_url(&server_url)?;
     println!("Fetching config from: {}", config_url);
@@ -114,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Upload endpoint: {}", config.api_url);
 
     // ------------------------------------------------------------------
-    // 5. Build NIP-96 upload request (NIP-98 Authorization header)
+    // 6. Build NIP-96 upload request (NIP-98 Authorization header)
     // ------------------------------------------------------------------
     let upload_request = nip96::UploadRequest::new(&keys, &config, &file_data).await?;
     // Note: the Authorization value is a base64-encoded signed Nostr event
@@ -135,13 +138,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         file_path
     );
 
-    if dry_run {
-        println!("\n[dry-run] Skipping upload (set NOSTR_SEC to upload for real).");
-        return Ok(());
-    }
-
     // ------------------------------------------------------------------
-    // 6. Upload via curl multipart POST
+    // 7. Upload via curl multipart POST
     // ------------------------------------------------------------------
     println!("\nUploading…");
     let upload_output = Command::new("curl")
@@ -169,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // ------------------------------------------------------------------
-    // 7. Parse and display the result
+    // 8. Parse and display the result
     // ------------------------------------------------------------------
     let response = nip96::UploadResponse::from_json(&upload_output.stdout)?;
     match response.download_url() {
