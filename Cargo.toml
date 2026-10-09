@@ -18,7 +18,7 @@ eula = false
 members = [".", "n34", "n34-relay", "src/get_file_hash_core"]
 
 [workspace.package]
-version = "970589.1845.787592"
+version = "970629.1845.739707"
 rust-version = "1.88.0"
 edition = "2024"
 license = "MIT"
@@ -38,11 +38,11 @@ easy-ext = "1.0.2"
 either = "1.15.0"
 frost-secp256k1-tr = "3.0.0-rc.0"
 futures = "0.3.31"
-get_file_hash_core = { version = ">=970589.1845.787592", features = [
+get_file_hash_core = { version = ">=970629.1845.739707", features = [
     "nostr",
 ], path = "src/get_file_hash_core" }
-gnostr-n34 = { version = ">=970589.1845.787592", path = "n34" }
-gnostr-n34-relay = { version = ">=970589.1845.787592", path = "n34-relay" }
+gnostr-n34 = { version = ">=970629.1845.739707", path = "n34" }
+gnostr-n34-relay = { version = ">=970629.1845.739707", path = "n34-relay" }
 
 hex = "0.4.2"
 log = "0.4"
