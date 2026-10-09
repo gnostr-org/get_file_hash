@@ -47,11 +47,14 @@ gnostr-n34-relay = { version = ">=970575.1845.804934", path = "n34-relay" }
 hex = "0.4.2"
 log = "0.4"
 nostr = { version = "0.44.2", features = ["std", "nip46", "nip96"] }
+nostr-database = { version = "0.44.0", default-features = false }
 nostr-browser-signer-proxy = "0.43.0"
+nostr-lmdb = { version = "0.44.0", default-features = false }
 nostr-sdk = { version = "0.44.0", default-features = false, features = [
     "default",
     "pow-multi-thread",
 ] }
+nostr-relay-builder = { version = "0.44.0", default-features = false }
 rand = "0.8"
 rand_chacha = "0.3"
 regex = "1.11.1"

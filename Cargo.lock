@@ -1415,8 +1415,8 @@ dependencies = [
  "hyper-util",
  "nostr 0.44.8",
  "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
- "nostr-lmdb",
- "nostr-relay-builder",
+ "nostr-lmdb 0.44.0",
+ "nostr-relay-builder 0.44.0",
  "nostr-sdk 0.44.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot",
  "prost",
@@ -1561,10 +1561,10 @@ dependencies = [
  "futures",
  "hyper",
  "hyper-util",
- "nostr 0.44.1",
- "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
- "nostr-lmdb",
- "nostr-relay-builder",
+ "nostr 0.44.8",
+ "nostr-database 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nostr-lmdb 0.44.1",
+ "nostr-relay-builder 0.44.1",
  "parking_lot",
  "prost",
  "protobuf-src",
@@ -2482,6 +2482,7 @@ version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7462c9d8ae5ef6a28d66a192d399ad2530f1f2130b13186296dbb11bdef5b3d1"
 dependencies = [
+ "flatbuffers",
  "lru",
  "nostr 0.44.8",
  "tokio",
@@ -2539,6 +2540,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "nostr-lmdb"
+version = "0.44.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "160a6de54935b291573cc49d1e40057119f54587f4a471ee17e2348f20d14baa"
+dependencies = [
+ "async-utility",
+ "flume 0.11.1",
+ "heed",
+ "nostr 0.44.8",
+ "nostr-database 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "nostr-memory"
 version = "0.44.0"
 source = "git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3#27a1947d35d1e5af17379a7586365ba56a750025"
@@ -2563,6 +2579,23 @@ dependencies = [
  "nostr-database 0.44.0 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
  "nostr-memory",
  "nostr-sdk 0.44.1 (git+https://git.4rs.nl/mirrors/nostr.git?rev=27a1947d3)",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "nostr-relay-builder"
+version = "0.44.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08ed09e8363503c6f464087b530a1f43cf68be6292bd4928b5ea1141b03dc11c"
+dependencies = [
+ "async-utility",
+ "async-wsocket 0.13.2",
+ "atomic-destructor",
+ "hex",
+ "negentropy",
+ "nostr 0.44.8",
+ "nostr-database 0.44.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "tracing",
 ]

@@ -91,24 +91,20 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 [dependencies.nostr]
 default-features = false
 features = ["std"]
-git = "https://git.4rs.nl/mirrors/nostr.git"
-rev = "27a1947d3"
-# version          = "0.45.0"
+workspace = true
+
 [dependencies.nostr-database]
 default-features = false
-git = "https://git.4rs.nl/mirrors/nostr.git"
-rev = "27a1947d3"
-# version          = "0.45.0"
+workspace = true
+
 [dependencies.nostr-lmdb]
 default-features = false
-git = "https://git.4rs.nl/mirrors/nostr.git"
-rev = "27a1947d3"
-# version          = "0.45.0"
+workspace = true
+
 [dependencies.nostr-relay-builder]
 default-features = false
-git = "https://git.4rs.nl/mirrors/nostr.git"
-rev = "27a1947d3"
-# version          = "0.45.0"
+workspace = true
+
 [build-dependencies]
 tonic-prost-build = "0.14.2"
 [target.'cfg(not(windows))'.build-dependencies]
