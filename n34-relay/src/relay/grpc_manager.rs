@@ -20,9 +20,8 @@ use either::Either;
 use nostr::{event::Event, filter::Filter, message::MachineReadablePrefix, util::BoxedFuture};
 use nostr_relay_builder::builder::{
     QueryPolicy,
-    QueryPolicyResult,
+    PolicyResult,
     WritePolicy,
-    WritePolicyResult,
 };
 use tonic::transport::Channel;
 
@@ -325,16 +324,16 @@ impl WritePolicy for GrpcPluginsManager {
         &'a self,
         event: &'a Event,
         _: &'a std::net::SocketAddr,
-    ) -> BoxedFuture<'a, WritePolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async {
             for service in self.services.iter() {
                 if let Err(reject_msg) = service.run_write_plugins(event).await {
                     tracing::debug!(service_url = %service.uri, "event rejected: {}", event.id);
-                    return WritePolicyResult::reject(MachineReadablePrefix::Blocked, reject_msg);
+                    return PolicyResult::Reject(reject_msg);
                 }
             }
 
-            WritePolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }
@@ -344,16 +343,16 @@ impl QueryPolicy for GrpcPluginsManager {
         &'a self,
         query: &'a Filter,
         _: &'a std::net::SocketAddr,
-    ) -> BoxedFuture<'a, QueryPolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async move {
             for service in self.services.iter() {
                 if let Err(reject_msg) = service.run_query_plugins(query).await {
                     tracing::debug!(service_url = %service.uri, "query rejected: {query:?}");
-                    return QueryPolicyResult::reject(MachineReadablePrefix::Blocked, reject_msg);
+                    return PolicyResult::Reject(reject_msg);
                 }
             }
 
-            QueryPolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }

@@ -21,7 +21,7 @@ use nostr::{
     key::PublicKey,
     util::BoxedFuture,
 };
-use nostr_relay_builder::builder::WritePolicyResult;
+use nostr_relay_builder::builder::PolicyResult;
 use parking_lot::RwLock;
 
 use crate::{
@@ -66,25 +66,25 @@ pub struct KindBlacklist(
 );
 
 impl RelayPlugin for PubKeyBlacklist {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if self.0.contains(&event.pubkey) {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "this public key is blacklisted",
                 ));
             }
-            Some(WritePolicyResult::Accept)
+            Some(PolicyResult::Accept)
         })
     }
 }
 
 impl RelayPlugin for PubKeyWhiteList {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if self.0.is_empty() || self.0.contains(&event.pubkey) {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
-            Some(WritePolicyResult::blocked_reject(
+            Some(PolicyResult::blocked_reject(
                 "this public key is not whitelisted",
             ))
         })
@@ -92,17 +92,17 @@ impl RelayPlugin for PubKeyWhiteList {
 }
 
 impl RelayPlugin for MentionedPubKey {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             let whitelist_lock = self.0.read();
 
             if whitelist_lock.is_empty()
                 || public_keys(&event.tags).any(|p| whitelist_lock.contains(p))
             {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
 
-            Some(WritePolicyResult::blocked_reject(
+            Some(PolicyResult::blocked_reject(
                 "this public key is not whitelisted",
             ))
         })
@@ -110,23 +110,23 @@ impl RelayPlugin for MentionedPubKey {
 }
 
 impl RelayPlugin for KindWhitelist {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if self.0.is_empty() || self.0.contains(&event.kind) {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
-            Some(WritePolicyResult::blocked_reject("not allowed event kind"))
+            Some(PolicyResult::blocked_reject("not allowed event kind"))
         })
     }
 }
 
 impl RelayPlugin for KindBlacklist {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if !self.0.contains(&event.kind) {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
-            Some(WritePolicyResult::blocked_reject("event kind is blocked"))
+            Some(PolicyResult::blocked_reject("event kind is blocked"))
         })
     }
 }

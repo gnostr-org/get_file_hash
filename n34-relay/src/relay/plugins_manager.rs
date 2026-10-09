@@ -20,9 +20,8 @@ use either::Either;
 use nostr::{event::Event, filter::Filter, util::BoxedFuture};
 use nostr_relay_builder::builder::{
     QueryPolicy,
-    QueryPolicyResult,
+    PolicyResult,
     WritePolicy,
-    WritePolicyResult,
 };
 
 /// Middleware function type
@@ -83,7 +82,7 @@ pub trait RelayPlugin: Send + Sync {
     /// Returns `Some(WritePolicyResult)` to accept or reject, or `None` to take
     /// no action.
     #[allow(unused_variables)]
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async { None })
     }
 
@@ -92,7 +91,7 @@ pub trait RelayPlugin: Send + Sync {
     /// Returns `Some(QueryPolicyResult)` to process or reject the query, or
     /// `None` to take no action.
     #[allow(unused_variables)]
-    fn check_query<'a>(&'a self, query: &'a Filter) -> BoxedFuture<'a, Option<QueryPolicyResult>> {
+    fn check_query<'a>(&'a self, query: &'a Filter) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async { None })
     }
 }
@@ -174,12 +173,12 @@ where
 {
     /// Returns the first reject if no plugin accepted the event.
     #[inline(always)]
-    async fn check_write_any_plugins(&self, event: &Event) -> Option<WritePolicyResult> {
+    async fn check_write_any_plugins(&self, event: &Event) -> Option<PolicyResult> {
         let mut first_reject = None;
 
         for plugin in self.any_plugins.as_ref() {
             match plugin.check_event(event).await {
-                Some(WritePolicyResult::Accept) => {
+                Some(PolicyResult::Accept) => {
                     // If one plugin accept the event, set the rejection to `None`
                     // and exit the for-loop
                     first_reject = None;
@@ -197,12 +196,12 @@ where
 
     /// Returns the first reject if no plugin accepted the query.
     #[inline(always)]
-    async fn check_query_any_plugins(&self, query: &Filter) -> Option<QueryPolicyResult> {
+    async fn check_query_any_plugins(&self, query: &Filter) -> Option<PolicyResult> {
         let mut first_reject = None;
 
         for plugin in self.any_plugins.as_ref() {
             match plugin.check_query(query).await {
-                Some(QueryPolicyResult::Accept) => {
+                Some(PolicyResult::Accept) => {
                     // If one plugin accept the query, set the rejection to `None`
                     // and exit the for-loop
                     first_reject = None;
@@ -227,12 +226,12 @@ where
         &'a self,
         event: &'a Event,
         addr: &'a SocketAddr,
-    ) -> BoxedFuture<'a, WritePolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async {
             // All of the `all-plugins` must accept the event
             for plugin in self.all_plugins.as_ref() {
                 // Return the first reject
-                if let Some(reject @ WritePolicyResult::Reject { .. }) =
+                if let Some(reject @ PolicyResult::Reject(_)) =
                     plugin.check_event(event).await
                 {
                     return reject;
@@ -244,7 +243,7 @@ where
             }
 
             for manager in self.plugins_managers.as_ref() {
-                if let reject @ WritePolicyResult::Reject { .. } =
+                if let reject @ PolicyResult::Reject(_) =
                     manager.admit_event(event, addr).await
                 {
                     return reject;
@@ -260,7 +259,7 @@ where
             )
             .await;
 
-            WritePolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }
@@ -273,12 +272,12 @@ where
         &'a self,
         query: &'a Filter,
         addr: &'a SocketAddr,
-    ) -> BoxedFuture<'a, QueryPolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async {
             // All of the `all-plugins` must accept the query
             for plugin in self.all_plugins.as_ref() {
                 // Return the first reject
-                if let Some(reject @ QueryPolicyResult::Reject { .. }) =
+                if let Some(reject @ PolicyResult::Reject(_)) =
                     plugin.check_query(query).await
                 {
                     return reject;
@@ -290,7 +289,7 @@ where
             }
 
             for manager in self.plugins_managers.as_ref() {
-                if let reject @ QueryPolicyResult::Reject { .. } =
+                if let reject @ PolicyResult::Reject(_) =
                     manager.admit_query(query, addr).await
                 {
                     return reject;
@@ -306,7 +305,7 @@ where
             )
             .await;
 
-            QueryPolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }

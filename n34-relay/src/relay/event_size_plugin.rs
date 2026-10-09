@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/agpl-3.0>.
 
 use nostr::{event::Event, message::MachineReadablePrefix, util::BoxedFuture};
-use nostr_relay_builder::builder::WritePolicyResult;
+use nostr_relay_builder::builder::PolicyResult;
 
 use crate::relay::plugins_manager::RelayPlugin;
 
@@ -24,7 +24,7 @@ use crate::relay::plugins_manager::RelayPlugin;
 pub struct EventSizePlugin(pub usize);
 
 impl RelayPlugin for EventSizePlugin {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async move {
             let event_size = event
                 .tags
@@ -36,13 +36,10 @@ impl RelayPlugin for EventSizePlugin {
                 .saturating_add(event.content.len());
 
             if event_size > self.0 {
-                return Some(WritePolicyResult::reject(
-                    MachineReadablePrefix::Blocked,
-                    format!(
-                        "event size {event_size} is larger than maximum allowed {}",
-                        self.0
-                    ),
-                ));
+                return Some(PolicyResult::Reject(format!(
+                    "event size {event_size} is larger than maximum allowed {}",
+                    self.0
+                )));
             }
 
             None

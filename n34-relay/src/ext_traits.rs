@@ -22,7 +22,7 @@ use hyper::{
     header::{self, AsHeaderName},
 };
 use nostr::message::MachineReadablePrefix;
-use nostr_relay_builder::builder::WritePolicyResult;
+use nostr_relay_builder::builder::PolicyResult;
 use parking_lot::RwLock;
 
 /// Extension trait for managing a shared list of things
@@ -95,15 +95,16 @@ pub impl &HeaderMap<HeaderValue> {
     }
 }
 
-/// Extension trait for [WritePolicyResult]
+/// Extension trait for [PolicyResult]
 #[easy_ext::ext(WritePolicyResultExt)]
-pub impl WritePolicyResult {
+pub impl PolicyResult {
     /// Reject result with `Blocked` prefix
     #[inline]
     fn blocked_reject<S>(msg: S) -> Self
     where
         S: Into<Cow<'static, str>>,
     {
-        WritePolicyResult::reject(MachineReadablePrefix::Blocked, msg)
+        let _ = MachineReadablePrefix::Blocked;
+        PolicyResult::Reject(msg.into().into_owned())
     }
 }

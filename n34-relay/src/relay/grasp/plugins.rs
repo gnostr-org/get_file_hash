@@ -24,7 +24,7 @@ use nostr::{
     util::BoxedFuture,
 };
 use nostr_database::NostrDatabase;
-use nostr_relay_builder::builder::WritePolicyResult;
+use nostr_relay_builder::builder::PolicyResult;
 
 use crate::{
     ext_traits::WritePolicyResultExt,
@@ -95,7 +95,7 @@ impl RejectRepoState {
 }
 
 impl RelayPlugin for ValidateRepoEvent {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if event.kind != Kind::GitRepoAnnouncement {
                 return None;
@@ -107,7 +107,7 @@ impl RelayPlugin for ValidateRepoEvent {
                 .find(TagKind::Relays)
                 .is_none_or(|relays| relays.content().is_none())
             {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "No relays in the repository announcement",
                 ));
             }
@@ -118,25 +118,25 @@ impl RelayPlugin for ValidateRepoEvent {
                 .find(TagKind::Clone)
                 .is_none_or(|clones| clones.content().is_none())
             {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "No clone urls in the repository announcement",
                 ));
             }
 
             if event.tags.filter(TagKind::d()).count() > 1 {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "More than one `d` tag in the repository announcement",
                 ));
             }
 
             let Some(repo_name) = event.tags.identifier() else {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "The repository announcement must contains `d` tag",
                 ));
             };
 
             if repo_name.chars().count() > 30 {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "Repository name exceeds maximum length of 30 characters",
                 ));
             }
@@ -146,19 +146,19 @@ impl RelayPlugin for ValidateRepoEvent {
                 .chars()
                 .any(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_')
             {
-                return Some(WritePolicyResult::blocked_reject(format!(
+                return Some(PolicyResult::blocked_reject(format!(
                     "Invalid repository name '{repo_name}'. Repository names can only contain \
                      ASCII letters, numbers, hyphens (-), and underscores (_)."
                 )));
             }
 
-            Some(WritePolicyResult::Accept)
+            Some(PolicyResult::Accept)
         })
     }
 }
 
 impl RelayPlugin for GraspRepo {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if event.kind != Kind::GitRepoAnnouncement {
                 return None;
@@ -191,7 +191,7 @@ impl RelayPlugin for GraspRepo {
                 .iter()
                 .any(|relay| utils::remove_proto(relay).starts_with(&self.domain))
             {
-                return Some(WritePolicyResult::blocked_reject(format!(
+                return Some(PolicyResult::blocked_reject(format!(
                     "`{}` relay is not listed in the 'relays' tag of the announcement",
                     self.domain
                 )));
@@ -201,19 +201,19 @@ impl RelayPlugin for GraspRepo {
                 .iter()
                 .any(|clone_url| utils::remove_proto(clone_url) == repo_clone_url)
             {
-                return Some(WritePolicyResult::blocked_reject(format!(
+                return Some(PolicyResult::blocked_reject(format!(
                     "`{}` relay does not match any URLs in the 'clone' tag of the announcement",
                     self.domain
                 )));
             }
 
-            Some(WritePolicyResult::Accept)
+            Some(PolicyResult::Accept)
         })
     }
 }
 
 impl RelayPlugin for AcceptMention {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             // from GRASP protocol:
             // "MUST accept other events that tag, or are tagged by, either:
@@ -225,7 +225,7 @@ impl RelayPlugin for AcceptMention {
                 .db_contains(Filter::new().coordinates(repos_coordinate(event)))
                 .await
             {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
 
             // Check if the event tag a patch or an issue
@@ -237,7 +237,7 @@ impl RelayPlugin for AcceptMention {
                 )
                 .await
             {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
 
             // Check if the event is tagged by a patch or an issue. By either `e` tag or `q`
@@ -257,7 +257,7 @@ impl RelayPlugin for AcceptMention {
                     )
                     .await
             {
-                return Some(WritePolicyResult::Accept);
+                return Some(PolicyResult::Accept);
             }
 
             None
@@ -266,45 +266,45 @@ impl RelayPlugin for AcceptMention {
 }
 
 impl RelayPlugin for ValidateRepoState {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if event.kind != Kind::RepoState {
                 return None;
             }
 
             if event.tags.filter(TagKind::d()).count() > 1 {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "Invalid repository state announcement. More than one `d` tag",
                 ));
             }
 
             let Some(repo_name) = event.tags.identifier() else {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "Invalid repository state announcement. No `d` tag",
                 ));
             };
 
             if repo_name.chars().count() > 30 {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "Repository name exceeds maximum length of 30 characters",
                 ));
             }
 
             let Some(mut head) = event.tags.find(TagKind::Head).and_then(Tag::content) else {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "No `HEAD` tag in the repository state announcement",
                 ));
             };
 
             if !head.starts_with("ref: refs/heads/") {
-                return Some(WritePolicyResult::blocked_reject(
+                return Some(PolicyResult::blocked_reject(
                     "The `HEAD` tag must start with `ref: refs/heads/`",
                 ));
             }
 
             for (ref_name, commit) in git_utils::extract_refs(event) {
                 if !utils::is_valid_sha1(commit) {
-                    return Some(WritePolicyResult::blocked_reject(format!(
+                    return Some(PolicyResult::blocked_reject(format!(
                         "`{ref_name}` has an invalid sha1 commit id"
                     )));
                 }
@@ -312,18 +312,18 @@ impl RelayPlugin for ValidateRepoState {
 
             head = head.trim_start_matches("ref: ").trim();
             if !git_utils::extract_refs(event).any(|(ref_name, _)| ref_name == head) {
-                return Some(WritePolicyResult::blocked_reject(format!(
+                return Some(PolicyResult::blocked_reject(format!(
                     "No ref for the head `{head}`"
                 )));
             }
 
-            Some(WritePolicyResult::Accept)
+            Some(PolicyResult::Accept)
         })
     }
 }
 
 impl RelayPlugin for RejectRepoState {
-    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<WritePolicyResult>> {
+    fn check_event<'a>(&'a self, event: &'a Event) -> BoxedFuture<'a, Option<PolicyResult>> {
         Box::pin(async {
             if event.kind != Kind::RepoState {
                 return None;
@@ -348,10 +348,7 @@ impl RelayPlugin for RejectRepoState {
                 Ok(events) => events,
                 Err(err) => {
                     tracing::error!("Database error: {err}");
-                    return Some(WritePolicyResult::reject(
-                        MachineReadablePrefix::Error,
-                        "Database error",
-                    ));
+                    return Some(PolicyResult::Reject("Database error".to_string()));
                 }
             };
 
@@ -362,9 +359,9 @@ impl RelayPlugin for RejectRepoState {
                     || utils::get_maintainers(repo_announcement)
                         .any(|maintainer| maintainer == &event.pubkey)
             }) {
-                Some(WritePolicyResult::Accept)
+                Some(PolicyResult::Accept)
             } else {
-                Some(WritePolicyResult::blocked_reject(
+                Some(PolicyResult::blocked_reject(
                     "You don't have a repository for this state announcement in the relay.",
                 ))
             }

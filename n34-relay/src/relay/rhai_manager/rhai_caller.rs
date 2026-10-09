@@ -18,9 +18,8 @@ use either::Either;
 use nostr::{event::Event, filter::Filter, message::MachineReadablePrefix, util::BoxedFuture};
 use nostr_relay_builder::builder::{
     QueryPolicy,
-    QueryPolicyResult,
+    PolicyResult,
     WritePolicy,
-    WritePolicyResult,
 };
 use tokio::sync::oneshot;
 
@@ -89,12 +88,12 @@ impl WritePolicy for PluginCaller {
         &'a self,
         event: &'a Event,
         _: &'a std::net::SocketAddr,
-    ) -> BoxedFuture<'a, WritePolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async move {
             if let Err(reject_msg) = self.call_write(event).await {
-                return WritePolicyResult::reject(MachineReadablePrefix::Blocked, reject_msg);
+                return PolicyResult::Reject(reject_msg);
             }
-            WritePolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }
@@ -104,12 +103,12 @@ impl QueryPolicy for PluginCaller {
         &'a self,
         query: &'a Filter,
         _: &'a std::net::SocketAddr,
-    ) -> BoxedFuture<'a, QueryPolicyResult> {
+    ) -> BoxedFuture<'a, PolicyResult> {
         Box::pin(async move {
             if let Err(reject_msg) = self.call_query(query).await {
-                return QueryPolicyResult::reject(MachineReadablePrefix::Blocked, reject_msg);
+                return PolicyResult::Reject(reject_msg);
             }
-            QueryPolicyResult::Accept
+            PolicyResult::Accept
         })
     }
 }

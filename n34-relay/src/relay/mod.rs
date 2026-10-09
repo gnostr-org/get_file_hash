@@ -19,8 +19,7 @@ use std::sync::Arc;
 use nostr_database::NostrDatabase;
 use nostr_relay_builder::{
     LocalRelay,
-
-    builder::{LocalRelayBuilderNip42, RateLimit},
+    builder::{RateLimit, RelayBuilder, RelayBuilderNip42},
 };
 
 pub use self::{grpc_manager::GrpcError, rhai_manager::RhaiPluginsError};
@@ -89,7 +88,7 @@ pub async fn build_relay(config: Arc<RelayConfig>, relay_db: Arc<dyn NostrDataba
     }
 
     let plugins = plugins_builder.build();
-    let mut relay_builder = LocalRelay::builder()
+    let mut relay_builder = RelayBuilder::default()
         .addr(config.net.ip)
         .port(config.net.port)
         .auth_dm(true)
@@ -103,12 +102,12 @@ pub async fn build_relay(config: Arc<RelayConfig>, relay_db: Arc<dyn NostrDataba
         .query_policy(plugins);
 
     if config.relay.nip42 {
-        relay_builder = relay_builder.nip42(LocalRelayBuilderNip42::read_and_write());
+        relay_builder = relay_builder.nip42(RelayBuilderNip42::default());
     }
 
     if let Some(max_connections) = config.relay.max_connections {
         relay_builder = relay_builder.max_connections(max_connections)
     }
 
-    relay_builder.build()
+    LocalRelay::new(relay_builder)
 }

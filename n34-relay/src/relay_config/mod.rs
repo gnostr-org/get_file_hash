@@ -371,7 +371,7 @@ impl RelayConfig {
                 .max_readers(self.lmdb.max_readers)
                 .additional_dbs(self.lmdb.additional_dbs)
                 .build()
-                .await?,
+                ?,
         ))
     }
 }
