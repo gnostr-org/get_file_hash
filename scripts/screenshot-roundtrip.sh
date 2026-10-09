@@ -99,4 +99,9 @@ run_test tests::png_round_trips_over_http
 run_test tests::real_icon_png_round_trips_over_http
 run_local_round_trip
 
+banner "screenshot example real network round-trip"
+run_test tests::live_network_round_trip_uploads_and_returns_url
+banner "screenshot example wrote these files"
+ls -1 icon-*.svg icon-*.png icon-*.webp 2>/dev/null || true
+
 banner "screenshot round-trip tests complete"
