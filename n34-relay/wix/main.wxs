@@ -60,9 +60,9 @@
 
     <Product
         Id='*'
-        Name='n34-relay'
+        Name='gnostr-n34-relay'
         UpgradeCode='036A2A4F-DA54-4FE2-B2D8-8C58D5814874'
-        Manufacturer='Awiteb'
+        Manufacturer='gnostr admin@gnostr.org'
         Language='1033'
         Codepage='1252'
         Version='$(var.Version)'>
@@ -70,7 +70,7 @@
         <Package Id='*'
             Keywords='Installer'
             Description='A nostr GRASP relay implementation'
-            Manufacturer='Awiteb'
+            Manufacturer='gnostr admin@gnostr.org'
             InstallerVersion='450'
             Languages='1033'
             Compressed='yes'
@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='n34-relay Installation'/>
+        <Property Id='DiskPrompt' Value='gnostr-n34-relay Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='n34-relay'>
+                <Directory Id='APPLICATIONFOLDER' Name='gnostr-n34-relay'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='n34_relay.exe'
+                                Name='nip34_relay.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\n34_relay.exe'
+                                Source='$(var.CargoTargetBinDir)\nip34_relay.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>
@@ -173,7 +173,7 @@
         <!--<Icon Id='ProductICO' SourceFile='wix\Product.ico'/>-->
         <!--<Property Id='ARPPRODUCTICON' Value='ProductICO' />-->
 
-        <Property Id='ARPHELPLINK' Value='https://relay.n34.dev/docs.html'/>
+        <Property Id='ARPHELPLINK' Value='https://github.com/gnostr-org/get_file_hash#readme'/>
         
         <UI>
             <UIRef Id='WixUI_FeatureTree'/>
