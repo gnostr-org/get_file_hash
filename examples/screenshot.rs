@@ -258,8 +258,6 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::thread;
 
-    const PNG_MAGIC: &[u8] = b"\x89PNG\r\n\x1a\n";
-
     #[test]
     fn cli_round_trips_positionals_and_flags() {
         let args = Args::try_parse_from([
@@ -316,8 +314,10 @@ mod tests {
                 "-X",
                 "POST",
                 &format!("http://{addr}/upload"),
-                "-F",
-                &format!("file=@{};type=image/png", input_path.display()),
+                "--data-binary",
+                &format!("@{}", input_path.display()),
+                "-H",
+                "Content-Type: image/png",
             ])
             .status()
             .expect("run upload curl");
@@ -346,8 +346,7 @@ mod tests {
         let (method, path, body) = read_http_request(stream)?;
         match (method.as_str(), path.as_str()) {
             ("POST", "/upload") => {
-                let png = extract_png_from_multipart(&body).expect("extract png from multipart");
-                *uploaded.lock().expect("lock upload buffer") = Some(png);
+                *uploaded.lock().expect("lock upload buffer") = Some(body);
                 write_http_response(stream, 200, "text/plain", b"ok")?;
             }
             ("GET", "/image.png") => {
@@ -432,21 +431,5 @@ mod tests {
 
     fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
         haystack.windows(needle.len()).position(|window| window == needle)
-    }
-
-    fn extract_png_from_multipart(body: &[u8]) -> Option<Vec<u8>> {
-        let start = find_subslice(body, PNG_MAGIC)?;
-        let mut idx = start + PNG_MAGIC.len();
-
-        loop {
-            let chunk_header = body.get(idx..idx + 8)?;
-            let chunk_len = u32::from_be_bytes(chunk_header[0..4].try_into().ok()?) as usize;
-            let chunk_type = &chunk_header[4..8];
-            idx += 8 + chunk_len + 4;
-
-            if chunk_type == b"IEND" {
-                return body.get(start..idx).map(|png| png.to_vec());
-            }
-        }
     }
 }
