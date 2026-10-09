@@ -28,7 +28,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
 PORT = 8765
-PAYLOAD = open("src/get_file_hash_core/src/icon.svg", "rb").read()
+SVG = open("src/get_file_hash_core/src/icon.svg", "rb").read()
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -44,7 +44,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
         if path == "/files/icon.svg":
-            body = PAYLOAD
+            body = SVG
             self.send_response(200)
             self.send_header("Content-Type", "image/svg+xml")
             self.send_header("Content-Length", str(len(body)))
