@@ -16,7 +16,7 @@ run_test() {
 }
 
 run_local_round_trip() {
-    local server_port="8765"
+    local server_port="18765"
     local server_log
     server_log="$(mktemp)"
     trap 'rm -f "$server_log"' RETURN
@@ -27,7 +27,7 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
-PORT = 8765
+PORT = 18765
 SVG = open("src/get_file_hash_core/src/icon.svg", "rb").read()
 
 class Handler(BaseHTTPRequestHandler):
@@ -36,6 +36,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/.well-known/nostr/nip96.json":
             body = json.dumps({
                 "api_url": f"http://127.0.0.1:{PORT}/api/v2/nip96/upload",
+                "download_url": f"http://127.0.0.1:{PORT}/files/icon.svg",
             }).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
