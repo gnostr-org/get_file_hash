@@ -37,6 +37,7 @@
 //!                       Defaults to `https://nostr.build`.
 
 use clap::{ArgAction, Parser};
+use chrono::Utc;
 use get_file_hash_core::get_relay_urls;
 use nostr::nips::nip96;
 use nostr::prelude::*;
@@ -93,6 +94,22 @@ fn content_type_for_path(path: &Path) -> &'static str {
         Some("gif") => "image/gif",
         _ => "application/octet-stream",
     }
+}
+
+fn timestamped_icon_output_path(original_name: &str) -> PathBuf {
+    let timestamp = Utc::now().timestamp();
+    let original = Path::new(original_name);
+    let stem = original
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("icon");
+    let ext = original.extension().and_then(|value| value.to_str()).unwrap_or("");
+    let file_name = if ext.is_empty() {
+        format!("{stem}-{timestamp}")
+    } else {
+        format!("{stem}-{timestamp}.{ext}")
+    };
+    env::temp_dir().join(file_name)
 }
 
 #[tokio::main]
@@ -359,6 +376,10 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
+        let saved_path = timestamped_icon_output_path("icon.svg");
+        fs::write(&saved_path, &download.stdout).expect("save returned svg icon");
+        assert_eq!(fs::read(&saved_path).expect("read saved svg icon"), EMBEDDED_ICON_SVG);
+        fs::remove_file(&saved_path).ok();
 
         fs::remove_file(&input_path).ok();
         server.join().expect("server thread");
@@ -412,6 +433,10 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_PLACEHOLDER_PNG);
+        let saved_path = timestamped_icon_output_path("icon.png");
+        fs::write(&saved_path, &download.stdout).expect("save returned png icon");
+        assert_eq!(fs::read(&saved_path).expect("read saved png icon"), EMBEDDED_PLACEHOLDER_PNG);
+        fs::remove_file(&saved_path).ok();
 
         fs::remove_file(&input_path).ok();
         server.join().expect("server thread");
@@ -465,6 +490,10 @@ mod tests {
             .expect("run download curl");
         assert!(download.status.success(), "download curl failed: {}", download.status);
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_PNG);
+        let saved_path = timestamped_icon_output_path("icon.png");
+        fs::write(&saved_path, &download.stdout).expect("save returned icon png");
+        assert_eq!(fs::read(&saved_path).expect("read saved icon png"), EMBEDDED_ICON_PNG);
+        fs::remove_file(&saved_path).ok();
 
         fs::remove_file(&input_path).ok();
         server.join().expect("server thread");
@@ -539,6 +568,10 @@ mod tests {
             String::from_utf8_lossy(&download.stderr)
         );
         assert_eq!(download.stdout.as_slice(), EMBEDDED_ICON_SVG);
+        let saved_path = timestamped_icon_output_path("icon.svg");
+        fs::write(&saved_path, &download.stdout).expect("save returned live svg icon");
+        assert_eq!(fs::read(&saved_path).expect("read saved live svg icon"), EMBEDDED_ICON_SVG);
+        fs::remove_file(&saved_path).ok();
         println!("LIVE RELAY ONE-LINE: uploaded screenshot bytes and fetched them back unchanged");
 
         fs::remove_file(&file_path).ok();
