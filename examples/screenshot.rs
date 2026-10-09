@@ -253,6 +253,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 mod tests {
     use super::*;
     use clap::Parser;
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{Arc, Mutex};
+    use std::thread;
+
+    const PNG_MAGIC: &[u8] = b"\x89PNG\r\n\x1a\n";
 
     #[test]
     fn cli_round_trips_positionals_and_flags() {
@@ -283,16 +289,164 @@ mod tests {
     }
 
     #[test]
-    fn placeholder_png_round_trips_through_disk() {
-        let path = std::env::temp_dir().join(format!(
+    fn placeholder_png_round_trips_over_http() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let addr = listener.local_addr().expect("local addr");
+        let uploaded = Arc::new(Mutex::new(None::<Vec<u8>>));
+        let uploaded_for_server = Arc::clone(&uploaded);
+
+        let server = thread::spawn(move || {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().expect("accept connection");
+                handle_request(&mut stream, &uploaded_for_server).expect("handle request");
+            }
+        });
+
+        let input_path = std::env::temp_dir().join(format!(
             "get_file_hash-screenshot-test-{}.png",
             std::process::id()
         ));
+        fs::write(&input_path, PLACEHOLDER_PNG).expect("write placeholder png");
 
-        fs::write(&path, PLACEHOLDER_PNG).expect("write placeholder png");
-        let bytes = fs::read(&path).expect("read placeholder png");
-        fs::remove_file(&path).ok();
+        let upload_status = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                "-X",
+                "POST",
+                &format!("http://{addr}/upload"),
+                "-F",
+                &format!("file=@{};type=image/png", input_path.display()),
+            ])
+            .status()
+            .expect("run upload curl");
+        assert!(upload_status.success(), "upload curl failed: {upload_status}");
 
-        assert_eq!(bytes.as_slice(), PLACEHOLDER_PNG);
+        let download = std::process::Command::new("curl")
+            .args([
+                "--silent",
+                "--fail",
+                "--location",
+                &format!("http://{addr}/image.png"),
+            ])
+            .output()
+            .expect("run download curl");
+        assert!(download.status.success(), "download curl failed: {}", download.status);
+        assert_eq!(download.stdout.as_slice(), PLACEHOLDER_PNG);
+
+        fs::remove_file(&input_path).ok();
+        server.join().expect("server thread");
+    }
+
+    fn handle_request(
+        stream: &mut TcpStream,
+        uploaded: &Arc<Mutex<Option<Vec<u8>>>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let (method, path, body) = read_http_request(stream)?;
+        match (method.as_str(), path.as_str()) {
+            ("POST", "/upload") => {
+                let png = extract_png_from_multipart(&body).expect("extract png from multipart");
+                *uploaded.lock().expect("lock upload buffer") = Some(png);
+                write_http_response(stream, 200, "text/plain", b"ok")?;
+            }
+            ("GET", "/image.png") => {
+                let png = uploaded
+                    .lock()
+                    .expect("lock upload buffer")
+                    .clone()
+                    .expect("uploaded png available");
+                write_http_response(stream, 200, "image/png", &png)?;
+            }
+            _ => {
+                write_http_response(stream, 404, "text/plain", b"not found")?;
+            }
+        }
+        Ok(())
+    }
+
+    fn read_http_request(
+        stream: &mut TcpStream,
+    ) -> Result<(String, String, Vec<u8>), Box<dyn std::error::Error>> {
+        let mut buf = Vec::new();
+        let mut header_end = None;
+        loop {
+            let mut chunk = [0u8; 1024];
+            let n = stream.read(&mut chunk)?;
+            if n == 0 {
+                break;
+            }
+            buf.extend_from_slice(&chunk[..n]);
+            if let Some(pos) = find_subslice(&buf, b"\r\n\r\n") {
+                header_end = Some(pos + 4);
+                break;
+            }
+        }
+
+        let header_end = header_end.expect("request headers");
+        let headers = String::from_utf8(buf[..header_end].to_vec())?;
+        let mut content_length = 0usize;
+        let mut lines = headers.lines();
+        let request_line = lines.next().ok_or("missing request line")?;
+        for line in lines {
+            if let Some(value) = line.strip_prefix("Content-Length: ") {
+                content_length = value.trim().parse()?;
+            }
+        }
+
+        while buf.len() < header_end + content_length {
+            let mut chunk = [0u8; 1024];
+            let n = stream.read(&mut chunk)?;
+            if n == 0 {
+                break;
+            }
+            buf.extend_from_slice(&chunk[..n]);
+        }
+
+        let mut parts = request_line.split_whitespace();
+        let method = parts.next().unwrap_or_default().to_string();
+        let path = parts.next().unwrap_or_default().to_string();
+        Ok((method, path, buf[header_end..header_end + content_length].to_vec()))
+    }
+
+    fn write_http_response(
+        stream: &mut TcpStream,
+        status: u16,
+        content_type: &str,
+        body: &[u8],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let reason = match status {
+            200 => "OK",
+            404 => "Not Found",
+            _ => "OK",
+        };
+        write!(
+            stream,
+            "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        )?;
+        stream.write_all(body)?;
+        stream.flush()?;
+        Ok(())
+    }
+
+    fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+        haystack.windows(needle.len()).position(|window| window == needle)
+    }
+
+    fn extract_png_from_multipart(body: &[u8]) -> Option<Vec<u8>> {
+        let start = find_subslice(body, PNG_MAGIC)?;
+        let mut idx = start + PNG_MAGIC.len();
+
+        loop {
+            let chunk_header = body.get(idx..idx + 8)?;
+            let chunk_len = u32::from_be_bytes(chunk_header[0..4].try_into().ok()?) as usize;
+            let chunk_type = &chunk_header[4..8];
+            idx += 8 + chunk_len + 4;
+
+            if chunk_type == b"IEND" {
+                return body.get(start..idx).map(|png| png.to_vec());
+            }
+        }
     }
 }
