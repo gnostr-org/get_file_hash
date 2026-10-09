@@ -121,21 +121,17 @@ fn timestamped_icon_output_path_for_content_type(dir: &Path, content_type: &str)
 }
 
 fn timestamped_icon_output_path_for_download_url(dir: &Path, download_url: &Url) -> PathBuf {
-    let filename = download_url
+    let ext = download_url
         .path_segments()
         .and_then(|segments| segments.last())
-        .unwrap_or("icon.bin");
-    let original = Path::new(filename);
-    let stem = original
-        .file_stem()
+        .and_then(|filename| Path::new(filename).extension())
         .and_then(|value| value.to_str())
-        .unwrap_or("icon");
-    let ext = original.extension().and_then(|value| value.to_str()).unwrap_or("");
+        .unwrap_or("");
     let timestamp = Utc::now().timestamp();
     let file_name = if ext.is_empty() {
-        format!("{stem}-{timestamp}")
+        format!("icon-{timestamp}")
     } else {
-        format!("{stem}-{timestamp}.{ext}")
+        format!("icon-{timestamp}.{ext}")
     };
     dir.join(file_name)
 }
