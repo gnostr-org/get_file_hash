@@ -28,6 +28,9 @@ pub use frost_secp256k1_tr as frost_bip340;
 pub mod frost_mailbox_logic;
 
 #[cfg(feature = "nostr")]
+pub mod pip;
+
+#[cfg(feature = "nostr")]
 use std::collections::BTreeMap;
 
 pub const DUMMY_BUILD_MANIFEST_ID_STR: &str = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
@@ -168,7 +171,7 @@ pub fn write_event_json_to_file(
 
 #[cfg(feature = "nostr")]
 pub async fn publish_nostr_event_if_release(
-    client: &mut nostr_sdk::Client,
+    client: &mut nostr_sdk::client::Client,
     hash: String,
     keys: Keys,
     event_builder: EventBuilder,
@@ -179,9 +182,10 @@ pub async fn publish_nostr_event_if_release(
 ) -> Option<EventId> {
     let public_key = keys.public_key().to_string();
 
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.sign_with_keys(&keys).unwrap();
 
-    match client.send_event(&event).await {        Ok(event_output) => {
+    match client.send_event(&event).await {
+        Ok(event_output) => {
             println!("cargo:warning=Published Nostr event for {}: {}", file_path_str, event_output.val);
 
             let event_json_size = to_string(&event).map(|s| s.as_bytes().len()).unwrap_or(0);
@@ -213,8 +217,8 @@ pub async fn publish_nostr_event_if_release(
 
 #[cfg(feature = "nostr")]
 pub async fn get_repo_announcement_event(
-    client: &mut nostr_sdk::Client,
-    _keys: &Keys,
+    client: &mut nostr_sdk::client::Client,
+    keys: &Keys,
     relay_urls: &Vec<String>,
     repo_url: &str,
     repo_name: &str,
@@ -245,7 +249,7 @@ pub async fn get_repo_announcement_event(
         tags.push(Tag::parse(["relays", relay].iter().map(ToString::to_string).collect::<Vec<String>>()).unwrap());
     }
     let event_builder = EventBuilder::new(Kind::Custom(30617), repo_description).tags(tags);
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.sign_with_keys(keys).unwrap();
 
     match client.send_event(&event).await {
         Ok(event_output) => {
@@ -264,8 +268,8 @@ pub async fn get_repo_announcement_event(
 
 #[cfg(feature = "nostr")]
 pub async fn publish_repo_patch_event(
-    client: &mut nostr_sdk::Client,
-    _keys: &Keys,
+    client: &mut nostr_sdk::client::Client,
+    keys: &Keys,
     _relay_urls: &Vec<String>,
     repo_url: &str,
     repo_name: &str,
@@ -285,7 +289,7 @@ pub async fn publish_repo_patch_event(
     ];
 
     let event_builder = EventBuilder::new(Kind::Custom(1617), repo_description).tags(tags);
-    let event = client.sign_event_builder(event_builder).await.unwrap();
+    let event = event_builder.sign_with_keys(keys).unwrap();
 
     match client.send_event(&event).await {
         Ok(event_output) => {
@@ -767,7 +771,10 @@ pub async fn publish_metadata_event(
     let metadata = serde_json::from_str::<nostr_sdk::Metadata>(&metadata_json.to_string())
         .expect("Failed to parse metadata JSON");
 
-    match client.send_event_builder(EventBuilder::metadata(&metadata)).await {
+    let event = EventBuilder::metadata(&metadata).sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await
+    {
         Ok(_event_id) => {
             //println!("cargo:warning=Published Nostr metadata event for {}: {:?}", file_path_str, event_id);
         }
@@ -814,7 +821,9 @@ pub async fn publish_repository_announcement_event(
         "", // Content is empty for repository announcement
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Repository Announcement for {}. Event ID (raw): {:?}, Event ID (bech32): {}", project_name, event_id, event_id.to_bech32().unwrap());
         }
@@ -856,7 +865,9 @@ pub async fn publish_patch_event(
         patch_content,
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=\nPublished NIP-34 Patch event for commit {}.\nEvent ID (raw): {:?},\nEvent ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -904,7 +915,9 @@ pub async fn publish_pull_request_event(
         "gnostr patch", // Content can be empty or a description for the PR
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Pull Request event for commit {}. Event ID (raw): {:?}, Event ID (bech32): {}", commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -949,7 +962,9 @@ pub async fn publish_pr_update_event(
         "", // Content is empty for PR update
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 PR Update event for PR {} (raw: {:?}). Event ID (raw): {:?}, Event ID (bech32): {}", pr_event_id.to_bech32().unwrap(), pr_event_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -985,7 +1000,9 @@ pub async fn publish_repository_state_event(
         Tag::parse(["commit", commit_id]).expect("Failed to create commit ID tag"),
     ]);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Repository State event for branch {} (commit {}). Event ID (raw): {:?}, Event ID (bech32): {}", branch_name, commit_id, event_id, event_id.to_bech32().unwrap());
         }
@@ -1029,7 +1046,9 @@ pub async fn publish_issue_event(
         content,
     ).tags(tags);
 
-    match client.send_event_builder(event_builder).await {
+    let event = event_builder.sign_with_keys(keys).unwrap();
+
+    match client.send_event(&event).await {
         Ok(event_id) => {
             println!("cargo:warning=Published NIP-34 Issue event for issue {} ({}). Event ID (raw): {:?}, Event ID (bech32): {}", issue_id, title, event_id, event_id.to_bech32().unwrap());
         }

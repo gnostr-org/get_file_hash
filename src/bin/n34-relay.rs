@@ -1,4 +1,4 @@
-// n34-relay - A nostr GRASP relay implementation
+// gnostr-n34-relay - A nostr GRASP relay implementation
 // Copyright (C) 2025 Awiteb <a@4rs.nl>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -28,25 +28,25 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt};
 
 /// Relay endpoints
-use n34_relay::endpoints;
+use gnostr_n34_relay::endpoints;
 /// Relay errors.
-use n34_relay::errors;
+use gnostr_n34_relay::errors;
 // /// Extension traits
-// use n34_relay::ext_traits;
+// use gnostr_n34_relay::ext_traits;
 /// GRASP git server
-use n34_relay::git_server;
+use gnostr_n34_relay::git_server;
 // /// Relay pathes.
 // use n34_relay::pathes;
 // /// Raw axum websocket
 // use n34_relay::raw_websocket;
 /// Our relay.
-use n34_relay::relay;
+use gnostr_n34_relay::relay;
 /// Relay configuration.
-use n34_relay::relay_config;
+use gnostr_n34_relay::relay_config;
 /// Router state
-use n34_relay::router_state;
+use gnostr_n34_relay::router_state;
 /// Some useful utils.
-use n34_relay::utils;
+use gnostr_n34_relay::utils;
 
 use self::{errors::RelayResult, relay_config::RelayConfig, router_state::RouterState};
 

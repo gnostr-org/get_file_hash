@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 /// Command line interface module
-use n34::cli;
+use gnostr_n34::cli;
 // /// N34 errors
 // use n34::error;
 // /// Nostr utils module
